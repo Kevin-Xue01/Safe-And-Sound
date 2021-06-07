@@ -91,6 +91,8 @@ ipython_config.py
 #   install all needed dependencies.
 #Pipfile.lock
 
+.vscode
+
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow
 __pypackages__/
 
@@ -109,6 +111,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
 
 # Spyder project settings
 .spyderproject
