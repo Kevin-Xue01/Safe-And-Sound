@@ -3,12 +3,13 @@ import numpy as np
 import copy
 
 def main():
-    start()
+    # warp_perspective()
+    start_recording_video()
 
 def nothing(x):
     pass
 
-def start():
+def warp_perspective():
     # cap = cv2.VideoCapture(0)
     # while True:
     #     ret, frame, = cap.read()
@@ -69,6 +70,30 @@ def start():
         img = newImg
    
     return
+
+def start_recording_video ():
+    cap = cv2.VideoCapture(0)
+    while True:
+        ret, frame, = cap.read()
+        lower_red = np.array([0, 68, 154])
+        upper_red = np.array([180, 255, 243])
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, lower_red, upper_red)   
+        kernel = np.ones((5, 5), np.uint8)
+        mask = cv2.erode(mask, kernel)
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in contours:
+            cv2.drawContours(frame, [cnt], 0, (0,0,0), 5)
+        # area = cv2.contourArea(cnt)
+        # approx = cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt, True), True)
+        # x = approx.ravel()[0]
+        # y = approx.ravel()[1]
+        cv2.imshow('camera', frame)
+        if cv2.waitKey(1) == ord('q'):
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+    pass
 
 if __name__ == '__main__':
     main()
