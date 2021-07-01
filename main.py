@@ -83,11 +83,15 @@ def start_recording_video ():
         mask = cv2.erode(mask, kernel)
         contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         for cnt in contours:
-            cv2.drawContours(frame, [cnt], 0, (0,0,0), 5)
-        # area = cv2.contourArea(cnt)
-        # approx = cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt, True), True)
-        # x = approx.ravel()[0]
-        # y = approx.ravel()[1]
+            area = cv2.contourArea(cnt)
+            approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
+            x = approx.ravel()[0]
+            y = approx.ravel()[1]
+            if area > 400:
+                cv2.drawContours(frame, [approx], 0, (0,0,0), 5)
+                if len(approx) >= 4 and len(approx) <= 10:
+                    cv2.putText(frame, "Rectangle", (x, y), cv2.FONT_HERSHEY_COMPLEX, 1, (0,0,0))
+        
         cv2.imshow('camera', frame)
         if cv2.waitKey(1) == ord('q'):
             break
