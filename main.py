@@ -4,8 +4,8 @@ import copy
 
 def main():
     # warp_perspective()
-    # start_recording_video()
-    getting_pixel_values()
+    start_recording_video()
+    # getting_pixel_values()
 
 def nothing(x):
     pass
@@ -76,10 +76,10 @@ def start_recording_video ():
     cap = cv2.VideoCapture(0)
     while True:
         ret, frame, = cap.read()
-        lower_red = np.array([0, 68, 154])
-        upper_red = np.array([180, 255, 243])
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv, lower_red, upper_red)   
+        lower_bound_for_red = np.array([45]) # optimal value is [55, 55, 55]
+        upper_bound_for_red = np.array([65])
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        mask = cv2.inRange(frame, lower_bound_for_red, upper_bound_for_red)   
         kernel = np.ones((5, 5), np.uint8)
         mask = cv2.erode(mask, kernel)
         contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -92,10 +92,33 @@ def start_recording_video ():
                 cv2.drawContours(frame, [approx], 0, (0,0,0), 5)
                 if len(approx) >= 4 and len(approx) <= 10:
                     cv2.putText(frame, "Rectangle", (x, y), cv2.FONT_HERSHEY_COMPLEX, 1, (0,0,0))
+
+        # lower_bound_for_green = np.array([118])
+        # upper_bound_for_green = np.array([138])
+        # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # mask = cv2.inRange(frame, lower_bound_for_green, upper_bound_for_green)   
+        # kernel = np.ones((5, 5), np.uint8)
+        # mask = cv2.erode(mask, kernel)
+        # contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # for cnt in contours:
+        #     area = cv2.contourArea(cnt)
+        #     approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
+        #     x = approx.ravel()[0]
+        #     y = approx.ravel()[1]
+        #     if area > 400:
+        #         cv2.drawContours(frame, [approx], 0, (0,0,0), 5)
+        #         if len(approx) >= 4 and len(approx) <= 10:
+        #             cv2.putText(frame, "Rectangle", (x, y), cv2.FONT_HERSHEY_COMPLEX, 1, (0,0,0))
+        
+        
+        
+        
+        
         
         cv2.imshow('camera', frame)
         if cv2.waitKey(1) == ord('q'):
             break
+        
     cap.release()
     cv2.destroyAllWindows()
     pass
@@ -109,9 +132,9 @@ def getting_pixel_values():
     print(rows, cols)
     cv2.imshow("Original", img)
     img = cv2.rectangle(img, (40, 350), (120, 550), (128, 128, 128), 5)
-    color = img[250, 30]
+    color = img[250, 30] # 55 the lower the number, the darker
     print(color)
-    color = img[350, 40]
+    color = img[350, 40] # 128
     print(color)
 
     while True:
