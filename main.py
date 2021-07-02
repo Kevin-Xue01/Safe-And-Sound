@@ -4,7 +4,8 @@ import copy
 
 def main():
     # warp_perspective()
-    start_recording_video()
+    # start_recording_video()
+    getting_pixel_values()
 
 def nothing(x):
     pass
@@ -98,6 +99,29 @@ def start_recording_video ():
     cap.release()
     cv2.destroyAllWindows()
     pass
+
+def getting_pixel_values():
+    img = cv2.imread("assets/main_view.jpg")
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # img = cv2.Canny(img, 99, 99)
+    _, thrash = cv2.threshold(img, 240, 255, cv2.THRESH_BINARY)
+    rows,cols = img.shape
+    print(rows, cols)
+    cv2.imshow("Original", img)
+    img = cv2.rectangle(img, (40, 350), (120, 550), (128, 128, 128), 5)
+    color = img[250, 30]
+    print(color)
+    color = img[350, 40]
+    print(color)
+
+    while True:
+        exit = cv2.waitKey(1) & 0xFF
+        if exit == 27:
+            break
+        
+        cv2.imshow("Original", img)
+   
+    return
 
 if __name__ == '__main__':
     main()
