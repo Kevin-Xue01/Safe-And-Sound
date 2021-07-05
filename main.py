@@ -3,8 +3,8 @@ import numpy as np
 import copy
 
 def main():
-    # warp_perspective()
-    start_recording_video()
+    warp_perspective()
+    # start_recording_video()
     # getting_pixel_values()
 
 def nothing(x):
@@ -66,6 +66,16 @@ def warp_perspective():
         
         matrix = cv2.getPerspectiveTransform(pts1,pts2)
         distorted = cv2.warpPerspective(newImg, matrix, (cols, rows))
+        #
+        lower_bound_for_red = np.array([45]) # optimal value is [55, 55, 55]
+        upper_bound_for_red = np.array([65])
+        mask = cv2.inRange(newImg, lower_bound_for_red, upper_bound_for_red)   
+        kernel = np.ones((5, 5), np.uint8)
+        mask = cv2.erode(mask, kernel)
+        contours, _ = cv2.findContours(newImg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        #
+
+        cv2.imshow('Mask', mask)
         cv2.imshow('Distorted', distorted)
         cv2.imshow("Original", newImg)
         img = newImg
@@ -76,19 +86,22 @@ def start_recording_video ():
     cap = cv2.VideoCapture(0)
     while True:
         ret, frame, = cap.read()
-        lower_bound_for_red = np.array([45]) # optimal value is [55, 55, 55]
-        upper_bound_for_red = np.array([65])
+        # lower_bound_for_red = np.array([45]) # optimal value is [55, 55, 55]
+        # upper_bound_for_red = np.array([65])
+        # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # mask = cv2.inRange(frame, lower_bound_for_red, upper_bound_for_red)   
+        # kernel = np.ones((15, 15), np.uint8)
+        # mask = cv2.erode(mask, kernel)
+        # contours, _ = cv2.findContours(frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        mask = cv2.inRange(frame, lower_bound_for_red, upper_bound_for_red)   
-        kernel = np.ones((5, 5), np.uint8)
-        mask = cv2.erode(mask, kernel)
-        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        ret, thresh = cv2.threshold(frame, 45, 65, 0)
+        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         for cnt in contours:
             area = cv2.contourArea(cnt)
             approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
             x = approx.ravel()[0]
             y = approx.ravel()[1]
-            if area > 400:
+            if area > 800:
                 cv2.drawContours(frame, [approx], 0, (0,0,0), 5)
                 if len(approx) >= 4 and len(approx) <= 10:
                     cv2.putText(frame, "Rectangle", (x, y), cv2.FONT_HERSHEY_COMPLEX, 1, (0,0,0))
@@ -114,7 +127,7 @@ def start_recording_video ():
         
         
         
-        
+        # cv2.imshow('Mask', mask)
         cv2.imshow('camera', frame)
         if cv2.waitKey(1) == ord('q'):
             break
