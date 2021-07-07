@@ -3,14 +3,12 @@ import numpy as np
 import copy
 
 def main():
-    warp_perspective()
-    # start_recording_video()
-    # getting_pixel_values()
-
-def nothing(x):
+    getting_pixel_values()
     pass
 
 def warp_perspective():
+    def nothing(x):
+        pass
     # cap = cv2.VideoCapture(0)
     # while True:
     #     ret, frame, = cap.read()
@@ -48,8 +46,7 @@ def warp_perspective():
         bRC = int(cols * cv2.getTrackbarPos("Bottom Right Column", "Trackbars") / 100) 
         bRR = int(rows * cv2.getTrackbarPos("Bottom Right Row", "Trackbars") / 100 )
         
-        exit = cv2.waitKey(1) & 0xFF
-        if exit == 27:
+        if cv2.waitKey(1) == ord('q'): # press q to terminate program
             break
         pts1 = np.float32(
             [[tLC, tLR],
@@ -129,35 +126,81 @@ def start_recording_video ():
         
         # cv2.imshow('Mask', mask)
         cv2.imshow('camera', frame)
-        if cv2.waitKey(1) == ord('q'):
+        if cv2.waitKey(1) == ord('q'): # press q to terminate program
             break
         
     cap.release()
     cv2.destroyAllWindows()
     pass
 
-def getting_pixel_values():
+def apply_green_mask(img):
+    
+
     img = cv2.imread("assets/main_view.jpg")
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # img = cv2.Canny(img, 99, 99)
     _, thrash = cv2.threshold(img, 240, 255, cv2.THRESH_BINARY)
+    rows, cols = img.shape  
+    
+    while True:
+        newImg = copy.deepcopy(img)
+        
+        tLC = int(cols * cv2.getTrackbarPos("Top Left Column", "Trackbars") / 100)  
+        tLR = int(rows * cv2.getTrackbarPos("Top Left Row", "Trackbars") / 100 )
+        tRC = int(cols * cv2.getTrackbarPos("Top Right Column", "Trackbars") / 100) 
+        tRR = int(rows * cv2.getTrackbarPos("Top Right Row", "Trackbars") / 100 )
+        bLC = int(cols * cv2.getTrackbarPos("Bottom Left Column", "Trackbars") / 100 ) 
+        bLR = int(rows * cv2.getTrackbarPos("Bottom Left Row", "Trackbars") / 100 )
+        bRC = int(cols * cv2.getTrackbarPos("Bottom Right Column", "Trackbars") / 100) 
+        bRR = int(rows * cv2.getTrackbarPos("Bottom Right Row", "Trackbars") / 100 )
+        
+        if cv2.waitKey(1) == ord('q'): # press q to terminate program
+            break
+        pts1 = np.float32(
+            [[tLC, tLR],
+             [tRC, tRR],
+             [bLC, bLR],
+             [bRC, bRR]]
+        )
+        pts2 = np.float32(
+            [[cols*0.1, rows],
+             [cols,     rows],
+             [0,        0],
+             [cols,     0]]
+        )    
+        
+        matrix = cv2.getPerspectiveTransform(pts1,pts2)
+        distorted = cv2.warpPerspective(newImg, matrix, (cols, rows))
+        #
+        lower_bound_for_red = np.array([45]) # optimal value is [55, 55, 55]
+        upper_bound_for_red = np.array([65])
+        mask = cv2.inRange(newImg, lower_bound_for_red, upper_bound_for_red)   
+        kernel = np.ones((5, 5), np.uint8)
+        mask = cv2.erode(mask, kernel)
+        contours, _ = cv2.findContours(newImg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        #
+
+        cv2.imshow('Mask', mask)
+        cv2.imshow('Distorted', distorted)
+        cv2.imshow("Original", newImg)
+        img = newImg
+   
+    return
+
+
+def getting_pixel_values():
+    img = cv2.imread("assets/main_view.jpg")
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, thrash = cv2.threshold(img, 240, 255, cv2.THRESH_BINARY)
     rows,cols = img.shape
-    print(rows, cols)
     cv2.imshow("Original", img)
     img = cv2.rectangle(img, (40, 350), (120, 550), (128, 128, 128), 5)
     color = img[250, 30] # 55 the lower the number, the darker
     print(color)
     color = img[350, 40] # 128
     print(color)
-
-    while True:
-        exit = cv2.waitKey(1) & 0xFF
-        if exit == 27:
-            break
-        
-        cv2.imshow("Original", img)
-   
-    return
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main()

@@ -24,6 +24,4 @@ Install Requirements from requirements.txt:
 Remove virtual environment(name of virtual environment, 1st argument, is "venv"):
 1. (Into cmd): rmdir venv /s
 
-Locations of Relevant Pixels
-Red: (30, 250) based on original image, intensity -> 160
-Green: (40, 350) based on original image
+
