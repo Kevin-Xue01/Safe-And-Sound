@@ -1,37 +1,46 @@
 import cv2 
 import numpy as np
-import copy
 import json
+import copy
+
+with_video = False
 
 def main():
-    img = cv2.imread("assets/main_view.jpg")
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     data = None
     with open('config.json', 'r') as file:
         data = json.load(file, parse_int=None)
-    img = warp_perspective(img, data)
-    # mask = apply_green_mask(img)
-    # contours = find_green_rectangle_contours(mask)
-    # approximate_polygons_and_draw_contours(contours, img)
-    cv2.imshow("Original", img)
-    while True:
-        if cv2.waitKey(1) == ord('q'): # press q to terminate program
-            break    
-    pass
+    if with_video:
+        start_recording_video()
+    else:
+        img = cv2.imread("assets/main_view.jpg")
+        img = warp_perspective(img, data)
+        mask = apply_green_mask(img)
+        rectangle_contours = find_green_rectangle_contours(mask)
+        find_green_rectangle_polygon(rectangle_contours, img)
+        canny = detect_ball_edge(img)
+        ball_contours = find_ball_contours(canny)
+        find_ball_polygon(ball_contours, img)
+        cv2.imshow("Original", img)
+        cv2.imshow("Ball Canny", canny)
+        cv2.imshow("Rectangle Mask", mask)
+        while True:
+            if cv2.waitKey(1) == ord('q'): # press q to terminate program
+                break    
+        cv2.destroyAllWindows()
 
 
 def warp_perspective(img, data):
-    
-    rows, cols = img.shape  
+    rows, cols, _ = img.shape  # Color
+    # rows, cols = img.shape  # Gray scale
     for i in data:
         data[i] = int(data[i])
     tLC, tLR, tRC, tRR, bLC, bLR, bRC, bRR = data.values()
 
     pts1 = np.float32(
-        [[int(cols*(tLC/100)), int(rows * (tLR/100))],
-         [int(cols*(tRC/100)), int(rows * (tRR/100))],
-         [int(cols*(bLC/100)), int(rows * (bLR/100))],
-         [int(cols*(bRC/100)), int(rows * (bRR/100))]]
+        [[int(cols*(tLC/100)), int(rows*(tLR/100))],
+         [int(cols*(tRC/100)), int(rows*(tRR/100))],
+         [int(cols*(bLC/100)), int(rows*(bLR/100))],
+         [int(cols*(bRC/100)), int(rows*(bRR/100))]]
     )    
     pts2 = np.float32(
         [[cols*0.1, rows],
@@ -45,61 +54,41 @@ def warp_perspective(img, data):
     return distorted
 
 def start_recording_video ():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     while True:
         ret, frame, = cap.read()
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        ret, thresh = cv2.threshold(frame, 45, 65, 0)
-        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        for cnt in contours:
-            area = cv2.contourArea(cnt)
-            approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
-            x = approx.ravel()[0]
-            y = approx.ravel()[1]
-            if area > 800:
-                cv2.drawContours(frame, [approx], 0, (0,0,0), 5)
-                if len(approx) >= 4 and len(approx) <= 10:
-                    cv2.putText(frame, "Rectangle", (x, y), cv2.FONT_HERSHEY_COMPLEX, 1, (0,0,0))
-
-        # lower_bound_for_green = np.array([118])
-        # upper_bound_for_green = np.array([138])
-        # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # mask = cv2.inRange(frame, lower_bound_for_green, upper_bound_for_green)   
-        # kernel = np.ones((5, 5), np.uint8)
-        # mask = cv2.erode(mask, kernel)
-        # contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        # for cnt in contours:
-        #     area = cv2.contourArea(cnt)
-        #     approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
-        #     x = approx.ravel()[0]
-        #     y = approx.ravel()[1]
-        #     if area > 400:
-        #         cv2.drawContours(frame, [approx], 0, (0,0,0), 5)
-        #         if len(approx) >= 4 and len(approx) <= 10:
-        #             cv2.putText(frame, "Rectangle", (x, y), cv2.FONT_HERSHEY_COMPLEX, 1, (0,0,0))
-        
+        mask = apply_green_mask(frame)
+        contours = find_green_rectangle_contours(mask)
+        find_green_rectangle_polygon(contours, frame)
         cv2.imshow('camera', frame)
         if cv2.waitKey(1) == ord('q'): # press q to terminate program
             break
         
     cap.release()
     cv2.destroyAllWindows()
-    pass
 
 def apply_green_mask(img):
     #
-    lower_bound_for_red = np.array([45]) # optimal value is [55, 55, 55]
-    upper_bound_for_red = np.array([65])
-    mask = cv2.inRange(img, lower_bound_for_red, upper_bound_for_red)   
+    lower_bound_for_green = np.array([ 10, 60, 0]) # optimal value is Gray = [55], BGR = [ 56, 107, 3]
+    upper_bound_for_green = np.array([[ 102, 134, 50]])
+    #
+    # lower_bound_for_green = np.array([45]) # optimal value is [55, 55, 55]
+    # upper_bound_for_green = np.array([65])
+    #
+    mask = cv2.inRange(img, lower_bound_for_green, upper_bound_for_green)   
     kernel = np.ones((5, 5), np.uint8)
     mask = cv2.erode(mask, kernel)
+    # cv2.imshow("mask", mask)
+    # while True:
+    #     if cv2.waitKey(1) == ord('q'): # press q to terminate program
+    #         break    
     return mask
 
 def find_green_rectangle_contours(mask):
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     return contours
 
-def approximate_polygons_and_draw_contours(contours, img):
+def find_green_rectangle_polygon(contours, img):
     for cnt in contours:
         area = cv2.contourArea(cnt)
         approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
@@ -109,18 +98,27 @@ def approximate_polygons_and_draw_contours(contours, img):
             cv2.drawContours(img, [approx], 0, (0,0,0), 5)
             if len(approx) >= 4 and len(approx) <= 10:
                 cv2.putText(img, "Rectangle", (x, y), cv2.FONT_HERSHEY_COMPLEX, 1, (0,0,0))
-    pass
-def getting_pixel_values():
-    img = cv2.imread("assets/main_view.jpg")
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    cv2.imshow("Original", img)
-    img = cv2.rectangle(img, (40, 350), (120, 550), (128, 128, 128), 5)
-    color = img[250, 30] # 55 the lower the number, the darker
-    print(color)
-    color = img[350, 40] # 128
-    print(color)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+
+def detect_ball_edge(img):
+    lower = 400
+    upper = 80
+    canny = cv2.Canny(img, lower, upper)
+    return canny
+
+def find_ball_contours(ball_canny):
+    contours, _ = cv2.findContours(ball_canny, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    return contours
+
+def find_ball_polygon(contours, img):
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        approx = cv2.approxPolyDP(cnt, 0.011*cv2.arcLength(cnt, True), True)
+        x = approx.ravel()[0]
+        y = approx.ravel()[1]
+        if area > 30 and area < 40 and len(approx) >= 17 :
+            cv2.drawContours(img, [approx], 0, (0,0,0), 3)
+            cv2.putText(img, "Circle", (x, y), cv2.FONT_HERSHEY_COMPLEX, 1, (0,0,0))
+    
 
 if __name__ == '__main__':
     main()

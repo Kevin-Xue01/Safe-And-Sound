@@ -3,14 +3,17 @@ import numpy as np
 import copy
 import json
 
+# img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
 def main():
     img = cv2.imread("assets/main_view.jpg")
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    warp_perspective_config(img)
-    while True:
-        if cv2.waitKey(1) == ord('q'): # press q to terminate program
-            break    
-    pass
+    get_pixel_values(img)
+    # warp_perspective_config(img)
+    # while True:
+    #     if cv2.waitKey(1) == ord('q'): # press q to terminate program
+    #         break    
+    # cv2.destroyAllWindows()
+    return
 
 
 def warp_perspective_config(img):
@@ -33,7 +36,8 @@ def warp_perspective_config(img):
     cv2.createTrackbar("Bottom Right Column", "Trackbars", bRC, 100, nothing)
     cv2.createTrackbar("Bottom Right Row", "Trackbars", bRR, 100, nothing)
 
-    rows, cols = img.shape  
+    rows, cols, _ = img.shape  
+    # rows, cols = img.shape  
     
     while True:
         newImg = copy.deepcopy(img)
@@ -72,17 +76,47 @@ def warp_perspective_config(img):
         json.dump(data, file)
     return
 
-def getting_pixel_values():
-    img = cv2.imread("assets/main_view.jpg")
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    cv2.imshow("Original", img)
-    img = cv2.rectangle(img, (40, 350), (120, 550), (128, 128, 128), 5)
-    color = img[250, 30] # 55 the lower the number, the darker
-    print(color)
-    color = img[350, 40] # 128
-    print(color)
-    cv2.waitKey(0)
+def get_pixel_values(img):
+    row, col, _ = img.shape
+    def nothing(x):
+        pass
+    cv2.namedWindow('Pixel Value Trackbar')
+    cv2.resizeWindow("Pixel Value Trackbar", 600, 200) # width, height
+    cv2.createTrackbar("Row Number", "Pixel Value Trackbar", 350, row, nothing)
+    cv2.createTrackbar("Column Number", "Pixel Value Trackbar", 30, col, nothing)
+
+    while True:
+        if cv2.waitKey(1) == ord('q'): # press q to terminate program
+            break
+        newImg = copy.deepcopy(img)
+
+        row_number = cv2.getTrackbarPos("Row Number", "Pixel Value Trackbar") 
+        col_number = cv2.getTrackbarPos("Column Number", "Pixel Value Trackbar") 
+        cv2.circle(newImg, (col_number, row_number), 5, (0,0,0), 1)
+        
+        cv2.imshow('Getting Pixel Value', newImg)
     cv2.destroyAllWindows()
+    return
+
+def ball_edge_detection_config(img):
+    def nothing(x):
+        pass
+    cv2.namedWindow('Trackbars')
+    cv2.createTrackbar("Lower Threshold", "Trackbars", 315, 1000, nothing)
+    cv2.createTrackbar("Upper Threshold", "Trackbars", 0, 1000, nothing)
+    canny = None
+    while True:
+        newImg = copy.deepcopy(img)
+    
+        lower = cv2.getTrackbarPos("Lower Threshold", "Trackbars") 
+        upper = cv2.getTrackbarPos("Upper Threshold", "Trackbars") 
+        
+        canny = cv2.Canny(newImg, lower, upper)
+        if cv2.waitKey(1) == ord('q'): # press q to terminate program
+            break
+        img = newImg
+        cv2.imshow('Canny', canny)
+    return canny
 
 if __name__ == '__main__':
     main()
