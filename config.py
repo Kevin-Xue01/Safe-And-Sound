@@ -18,12 +18,12 @@ def warp_perspective_config(img):
         pass
 
     data = None
-    with open('config.json', 'r') as file:
+    with open("config.json", "r") as file:
         data = json.load(file, parse_int=None)
 
     tLC, tLR, tRC, tRR, bLC, bLR, bRC, bRR = data["warp_perspective"].values()
 
-    cv2.namedWindow('Trackbars')
+    cv2.namedWindow("Trackbars")
     cv2.createTrackbar("Top Left Column", "Trackbars", tLC, 100, nothing)
     cv2.createTrackbar("Top Left Row", "Trackbars", tLR, 100, nothing)
     cv2.createTrackbar("Top Right Column", "Trackbars", tRC, 100, nothing)
@@ -47,21 +47,20 @@ def warp_perspective_config(img):
         bRC = cv2.getTrackbarPos("Bottom Right Column", "Trackbars")
         bRR = cv2.getTrackbarPos("Bottom Right Row", "Trackbars")
 
-        if cv2.waitKey(1) == ord('q'):  # press q to terminate program
+        if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
-        pts1 = np.float32([[int(cols * (tLC / 100)),
-                            int(rows * (tLR / 100))],
-                           [int(cols * (tRC / 100)),
-                            int(rows * (tRR / 100))],
-                           [int(cols * (bLC / 100)),
-                            int(rows * (bLR / 100))],
-                           [int(cols * (bRC / 100)),
-                            int(rows * (bRR / 100))]])
-        pts2 = np.float32([[cols * 0.1, rows], [cols, rows], [0, 0], [cols,
-                                                                      0]])
+        pts1 = np.float32(
+            [
+                [int(cols * (tLC / 100)), int(rows * (tLR / 100))],
+                [int(cols * (tRC / 100)), int(rows * (tRR / 100))],
+                [int(cols * (bLC / 100)), int(rows * (bLR / 100))],
+                [int(cols * (bRC / 100)), int(rows * (bRR / 100))],
+            ]
+        )
+        pts2 = np.float32([[cols * 0.1, rows], [cols, rows], [0, 0], [cols, 0]])
         matrix = cv2.getPerspectiveTransform(pts1, pts2)
         distorted = cv2.warpPerspective(newImg, matrix, (cols, rows))
-        cv2.imshow('Distorted', distorted)
+        cv2.imshow("Distorted", distorted)
         cv2.imshow("Original", newImg)
         img = newImg
 
@@ -73,9 +72,9 @@ def warp_perspective_config(img):
         "bLC": bLC,
         "bLR": bLR,
         "bRC": bRC,
-        "bRR": bRR
+        "bRR": bRR,
     }
-    with open('config.json', 'w') as file:
+    with open("config.json", "w") as file:
         json.dump(data, file, sort_keys=True, indent=4)
     return
 
@@ -86,23 +85,21 @@ def get_pixel_values(img):
     def nothing(x):
         pass
 
-    cv2.namedWindow('Pixel Value Trackbar')
+    cv2.namedWindow("Pixel Value Trackbar")
     cv2.resizeWindow("Pixel Value Trackbar", 600, 200)  # width, height
     cv2.createTrackbar("Row Number", "Pixel Value Trackbar", 350, row, nothing)
-    cv2.createTrackbar("Column Number", "Pixel Value Trackbar", 30, col,
-                       nothing)
+    cv2.createTrackbar("Column Number", "Pixel Value Trackbar", 30, col, nothing)
 
     while True:
-        if cv2.waitKey(1) == ord('q'):  # press q to terminate program
+        if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
         newImg = copy.deepcopy(img)
 
         row_number = cv2.getTrackbarPos("Row Number", "Pixel Value Trackbar")
-        col_number = cv2.getTrackbarPos("Column Number",
-                                        "Pixel Value Trackbar")
+        col_number = cv2.getTrackbarPos("Column Number", "Pixel Value Trackbar")
         cv2.circle(newImg, (col_number, row_number), 5, (0, 0, 0), 1)
 
-        cv2.imshow('Getting Pixel Value', newImg)
+        cv2.imshow("Getting Pixel Value", newImg)
     cv2.destroyAllWindows()
     return
 
@@ -110,7 +107,7 @@ def get_pixel_values(img):
 def ball_edge_detection_config(img):
 
     data = None
-    with open('config.json', 'r') as file:
+    with open("config.json", "r") as file:
         data = json.load(file, parse_int=None)
 
     lower, upper = data["ball_edge_detection"].values()
@@ -118,36 +115,36 @@ def ball_edge_detection_config(img):
     def nothing(x):
         pass
 
-    cv2.namedWindow('Ball Edge Detection Trackbar')
+    cv2.namedWindow("Ball Edge Detection Trackbar")
     cv2.resizeWindow("Ball Edge Detection Trackbar", 800, 100)  # width, height
-    cv2.createTrackbar("Lower Threshold", "Ball Edge Detection Trackbar",
-                       lower, 1000, nothing)
-    cv2.createTrackbar("Upper Threshold", "Ball Edge Detection Trackbar",
-                       upper, 1000, nothing)
+    cv2.createTrackbar(
+        "Lower Threshold", "Ball Edge Detection Trackbar", lower, 1000, nothing
+    )
+    cv2.createTrackbar(
+        "Upper Threshold", "Ball Edge Detection Trackbar", upper, 1000, nothing
+    )
     canny = None
     while True:
-        if cv2.waitKey(1) == ord('q'):  # press q to terminate program
+        if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
         newImg = copy.deepcopy(img)
 
-        lower = cv2.getTrackbarPos("Lower Threshold",
-                                   "Ball Edge Detection Trackbar")
-        upper = cv2.getTrackbarPos("Upper Threshold",
-                                   "Ball Edge Detection Trackbar")
+        lower = cv2.getTrackbarPos("Lower Threshold", "Ball Edge Detection Trackbar")
+        upper = cv2.getTrackbarPos("Upper Threshold", "Ball Edge Detection Trackbar")
 
         canny = cv2.Canny(newImg, lower, upper)
 
         img = newImg
-        cv2.imshow('Canny', canny)
+        cv2.imshow("Canny", canny)
     data["ball_edge_detection"] = {"lower": lower, "upper": upper}
-    with open('config.json', 'w') as file:
+    with open("config.json", "w") as file:
         json.dump(data, file, sort_keys=True, indent=4)
     return canny
 
 
 def apply_green_mask(img):
     data = None
-    with open('config.json', 'r') as file:
+    with open("config.json", "r") as file:
         data = json.load(file, parse_int=None)
 
     lower_bound, upper_bound = data["green_mask"].values()
@@ -155,58 +152,77 @@ def apply_green_mask(img):
     def nothing(x):
         pass
 
-    cv2.namedWindow('Green Mask Trackbar')
+    cv2.namedWindow("Green Mask Trackbar")
     cv2.resizeWindow("Green Mask Trackbar", 800, 600)  # width, height
-    cv2.createTrackbar("Lower Blue Threshold", "Green Mask Trackbar",
-                       lower_bound[0], 255, nothing)
-    cv2.createTrackbar("Lower Green Threshold", "Green Mask Trackbar",
-                       lower_bound[1], 255, nothing)
-    cv2.createTrackbar("Lower Red Threshold", "Green Mask Trackbar",
-                       lower_bound[2], 255, nothing)
-    cv2.createTrackbar("Upper Blue Threshold", "Green Mask Trackbar",
-                       upper_bound[0], 255, nothing)
-    cv2.createTrackbar("Upper Green Threshold", "Green Mask Trackbar",
-                       upper_bound[1], 255, nothing)
-    cv2.createTrackbar("Upper Red Threshold", "Green Mask Trackbar",
-                       upper_bound[2], 255, nothing)
+    cv2.createTrackbar(
+        "Lower Blue Threshold", "Green Mask Trackbar", lower_bound[0], 255, nothing
+    )
+    cv2.createTrackbar(
+        "Lower Green Threshold", "Green Mask Trackbar", lower_bound[1], 255, nothing
+    )
+    cv2.createTrackbar(
+        "Lower Red Threshold", "Green Mask Trackbar", lower_bound[2], 255, nothing
+    )
+    cv2.createTrackbar(
+        "Upper Blue Threshold", "Green Mask Trackbar", upper_bound[0], 255, nothing
+    )
+    cv2.createTrackbar(
+        "Upper Green Threshold", "Green Mask Trackbar", upper_bound[1], 255, nothing
+    )
+    cv2.createTrackbar(
+        "Upper Red Threshold", "Green Mask Trackbar", upper_bound[2], 255, nothing
+    )
     mask = None
     while True:
-        if cv2.waitKey(1) == ord('q'):  # press q to terminate program
+        if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
         newMask = copy.deepcopy(mask)
-        lower_blue_threshold = cv2.getTrackbarPos("Lower Blue Threshold",
-                                                  "Green Mask Trackbar")
-        lower_green_threshold = cv2.getTrackbarPos("Lower Green Threshold",
-                                                   "Green Mask Trackbar")
-        lower_red_threshold = cv2.getTrackbarPos("Lower Red Threshold",
-                                                 "Green Mask Trackbar")
-        upper_blue_threshold = cv2.getTrackbarPos("Upper Blue Threshold",
-                                                  "Green Mask Trackbar")
-        upper_green_threshold = cv2.getTrackbarPos("Upper Green Threshold",
-                                                   "Green Mask Trackbar")
-        upper_red_threshold = cv2.getTrackbarPos("Upper Red Threshold",
-                                                 "Green Mask Trackbar")
+        lower_blue_threshold = cv2.getTrackbarPos(
+            "Lower Blue Threshold", "Green Mask Trackbar"
+        )
+        lower_green_threshold = cv2.getTrackbarPos(
+            "Lower Green Threshold", "Green Mask Trackbar"
+        )
+        lower_red_threshold = cv2.getTrackbarPos(
+            "Lower Red Threshold", "Green Mask Trackbar"
+        )
+        upper_blue_threshold = cv2.getTrackbarPos(
+            "Upper Blue Threshold", "Green Mask Trackbar"
+        )
+        upper_green_threshold = cv2.getTrackbarPos(
+            "Upper Green Threshold", "Green Mask Trackbar"
+        )
+        upper_red_threshold = cv2.getTrackbarPos(
+            "Upper Red Threshold", "Green Mask Trackbar"
+        )
         lower_bound_for_green = np.array(
-            [lower_blue_threshold, lower_green_threshold, lower_red_threshold])
+            [lower_blue_threshold, lower_green_threshold, lower_red_threshold]
+        )
         upper_bound_for_green = np.array(
-            [upper_blue_threshold, upper_green_threshold, upper_red_threshold])
-        newMask = cv2.inRange(img, lower_bound_for_green,
-                              upper_bound_for_green)
+            [upper_blue_threshold, upper_green_threshold, upper_red_threshold]
+        )
+        newMask = cv2.inRange(img, lower_bound_for_green, upper_bound_for_green)
         kernel = np.ones((5, 5), np.uint8)
         newMask = cv2.erode(newMask, kernel)
         cv2.imshow("Green Mask", newMask)
         mask = newMask
 
     data["green_mask"] = {
-        "lower_bound":
-        [lower_blue_threshold, lower_green_threshold, lower_red_threshold],
-        "upper_bound":
-        [upper_blue_threshold, upper_green_threshold, upper_red_threshold]
+        "lower_bound": [
+            lower_blue_threshold,
+            lower_green_threshold,
+            lower_red_threshold,
+        ],
+        "upper_bound": [
+            upper_blue_threshold,
+            upper_green_threshold,
+            upper_red_threshold,
+        ],
     }
-    with open('config.json', 'w') as file:
+    with open("config.json", "w") as file:
         json.dump(data, file, sort_keys=True, indent=4)
     return mask
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
