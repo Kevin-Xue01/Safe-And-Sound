@@ -1,7 +1,7 @@
 {
     "ball_edge_detection": {
-        "lower": 521,
-        "upper": 72
+        "lower": 502,
+        "upper": 81
     },
     "green_mask": {
         "lower_bound": [
@@ -25,7 +25,7 @@
         "bLR": 0,
         "bRC": 97,
         "bRR": 0,
-        "tLC": 15,
+        "tLC": 17,
         "tLR": 96,
         "tRC": 100,
         "tRR": 94

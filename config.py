@@ -1,5 +1,4 @@
 import cv2
-from cv2 import data
 import numpy as np
 import copy
 import json
@@ -10,10 +9,9 @@ from operator import itemgetter
 def main():
     database_controller = Database()
     img = cv2.imread("assets/main_view.jpg")
-    get_pixel_values(img)
     warp_perspective_config(img, database_controller)
     ball_edge_detection_config(img, database_controller)
-    apply_green_mask(img)
+    apply_green_mask(img, database_controller)
     return
 
 
@@ -85,7 +83,7 @@ def warp_perspective_config(img: np.ndarray, database_controller: Database):
             "tRR": tRR,
         }
     )
-
+    cv2.destroyAllWindows()
     return
 
 
@@ -149,16 +147,15 @@ def ball_edge_detection_config(img: np.ndarray, database_controller: Database):
     database_controller.update_ball_edge_detection_data(
         {"lower": lower, "upper": upper}
     )
-
+    cv2.destroyAllWindows()
     return canny
 
 
-def apply_green_mask(img):
-    data = None
-    with open("config.json", "r") as file:
-        data = json.load(file, parse_int=None)
+def apply_green_mask(img: np.ndarray, database_controller: Database):
 
-    lower_bound, upper_bound = data["green_mask"].values()
+    lower_bound, upper_bound = itemgetter("lower_bound", "upper_bound")(
+        database_controller.get_green_mask_data()
+    )
 
     def nothing(x):
         pass
@@ -218,20 +215,21 @@ def apply_green_mask(img):
         cv2.imshow("Green Mask", newMask)
         mask = newMask
 
-    data["green_mask"] = {
-        "lower_bound": [
-            lower_blue_threshold,
-            lower_green_threshold,
-            lower_red_threshold,
-        ],
-        "upper_bound": [
-            upper_blue_threshold,
-            upper_green_threshold,
-            upper_red_threshold,
-        ],
-    }
-    with open("config.json", "w") as file:
-        json.dump(data, file, sort_keys=True, indent=4)
+    database_controller.update_green_mask_data(
+        {
+            "lower_bound": [
+                lower_blue_threshold,
+                lower_green_threshold,
+                lower_red_threshold,
+            ],
+            "upper_bound": [
+                upper_blue_threshold,
+                upper_green_threshold,
+                upper_red_threshold,
+            ],
+        }
+    )
+    cv2.destroyAllWindows()
     return mask
 
 

@@ -2,33 +2,48 @@ import cv2
 import numpy as np
 from database import Database
 from operator import itemgetter
+import copy
+from util import Util
+import json
 
 with_video = False
 
 
 def main():
-    database = Database()
+    database_controller = Database()
 
     if with_video:
         start_recording_video()
     else:
         img = cv2.imread("assets/main_view.jpg")
-        img = warp_perspective(img, database.get_warp_perspective_data())
-        mask = apply_green_mask(img, database.get_green_mask_data())
-        rectangle_contours = find_green_rectangle_contours(mask)
-        # find_green_rectangle_polygon(
-        #     rectangle_contours, img, database.get_green_polygon_data()
-        # )
-        canny = detect_ball_edge(img, database.get_ball_edge_detection_data())
-        # ball_contours = find_ball_contours(canny)
-        # find_ball_polygon(ball_contours, img)
-        cv2.imshow("Original", img)
-        cv2.imshow("Ball Canny", canny)
-        cv2.imshow("Green Mask", mask)
-        while True:
-            if cv2.waitKey(1) == ord("q"):  # press q to terminate program
-                break
-        cv2.destroyAllWindows()
+        img = warp_perspective(img, database_controller.get_warp_perspective_data())
+
+        # process_green_rectangle(copy.deepcopy(img), database_controller)
+        process_ball(copy.deepcopy(img), database_controller)
+    return
+
+
+def process_green_rectangle(img, database_controller: Database):
+
+    mask = apply_green_mask(img, database_controller.get_green_mask_data())
+    Util.freeze_current_image(mask, "Mask")
+    rectangle_contours = find_green_rectangle_contours(mask)
+    find_green_rectangle_polygon(
+        rectangle_contours, img, database_controller.get_green_polygon_data()
+    )
+    Util.freeze_current_image(img, "Find Green Rectangle Polygon")
+
+    return
+
+
+def process_ball(img, database_controller: Database):
+    canny = detect_ball_edge(img, database_controller.get_ball_edge_detection_data())
+    Util.freeze_current_image(canny, "Canny")
+    ball_contours = find_ball_contours(canny)
+    find_ball_polygon(ball_contours, img)
+    Util.freeze_current_image(img, "Find Ball Polygon")
+
+    return
 
 
 def warp_perspective(img, config_data):
@@ -107,14 +122,18 @@ def find_green_rectangle_polygon(contours, img, config_data):
             and len(approx) >= lower_length_threshold
             and len(approx) <= upper_length_threshold
         ):
-            cv2.drawContours(img, [approx], 0, (0, 0, 0), 3)
+            cv2.drawContours(img, [approx], 0, (0, 0, 0), 3)  # copy the image
 
 
 def detect_ball_edge(img, config_data):
-
-    lower, upper = itemgetter("lower", "upper")(config_data)
-    print(lower, upper)
+    img = cv2.imread("assets/main_view.jpg")
+    with open("config.json", "r") as file:
+        data = json.load(file, parse_int=None)
+    lower, upper = itemgetter("lower", "upper")(data["ball_edge_detection"])
     canny = cv2.Canny(img, lower, upper)
+    print(lower, upper)
+    cv2.imshow("A", canny)
+    cv2.imshow("B", img)
     return canny
 
 
