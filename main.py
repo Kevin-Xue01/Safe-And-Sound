@@ -16,12 +16,12 @@ def main():
         img = warp_perspective(img, database.get_warp_perspective_data())
         mask = apply_green_mask(img, database.get_green_mask_data())
         rectangle_contours = find_green_rectangle_contours(mask)
-        find_green_rectangle_polygon(
-            rectangle_contours, img, database.get_green_polygon_data()
-        )
-        canny = detect_ball_edge(img)
-        ball_contours = find_ball_contours(canny)
-        find_ball_polygon(ball_contours, img)
+        # find_green_rectangle_polygon(
+        #     rectangle_contours, img, database.get_green_polygon_data()
+        # )
+        canny = detect_ball_edge(img, database.get_ball_edge_detection_data())
+        # ball_contours = find_ball_contours(canny)
+        # find_ball_polygon(ball_contours, img)
         cv2.imshow("Original", img)
         cv2.imshow("Ball Canny", canny)
         cv2.imshow("Green Mask", mask)
@@ -96,20 +96,24 @@ def find_green_rectangle_contours(mask):
 
 
 def find_green_rectangle_polygon(contours, img, config_data):
+    area_threshold, lower_length_threshold, upper_length_threshold = itemgetter(
+        "area_threshold", "lower_length_threshold", "upper_length_threshold"
+    )(config_data)
     for cnt in contours:
         area = cv2.contourArea(cnt)
         approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
         if (
-            area > config_data["area"]
-            and len(approx) >= config_data["lower_length_threshold"]
-            and len(approx) <= config_data["upper_length_threshold"]
+            area > area_threshold
+            and len(approx) >= lower_length_threshold
+            and len(approx) <= upper_length_threshold
         ):
             cv2.drawContours(img, [approx], 0, (0, 0, 0), 3)
 
 
-def detect_ball_edge(img):
-    lower = 400
-    upper = 80
+def detect_ball_edge(img, config_data):
+
+    lower, upper = itemgetter("lower", "upper")(config_data)
+    print(lower, upper)
     canny = cv2.Canny(img, lower, upper)
     return canny
 

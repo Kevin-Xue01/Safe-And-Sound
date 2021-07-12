@@ -15,8 +15,5 @@ Part 2
 5. Get the first polygon with side length of ~20
 6. Find the middle pixel height of polygon
 
-Relevant Info:
-
-Locations of Relevant Pixels
-Red: (30, 250) based on original image, intensity -> 160
-Green: (40, 350) based on original image
+Alternatives:
+Motion Detection

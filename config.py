@@ -1,27 +1,36 @@
 import cv2
+from cv2 import data
 import numpy as np
 import copy
 import json
+from database import Database
+from operator import itemgetter
 
 
 def main():
+    database_controller = Database()
     img = cv2.imread("assets/main_view.jpg")
-    # get_pixel_values(img)
-    # warp_perspective_config(img)
-    # ball_edge_detection_config(img)
-    # apply_green_mask(img)
+    get_pixel_values(img)
+    warp_perspective_config(img, database_controller)
+    ball_edge_detection_config(img, database_controller)
+    apply_green_mask(img)
     return
 
 
-def warp_perspective_config(img):
+def warp_perspective_config(img: np.ndarray, database_controller: Database):
     def nothing(x):
         pass
 
-    data = None
-    with open("config.json", "r") as file:
-        data = json.load(file, parse_int=None)
-
-    tLC, tLR, tRC, tRR, bLC, bLR, bRC, bRR = data["warp_perspective"].values()
+    (bLC, bLR, bRC, bRR, tLC, tLR, tRC, tRR,) = itemgetter(
+        "bLC",
+        "bLR",
+        "bRC",
+        "bRR",
+        "tLC",
+        "tLR",
+        "tRC",
+        "tRR",
+    )(database_controller.get_warp_perspective_data())
 
     cv2.namedWindow("Trackbars")
     cv2.createTrackbar("Top Left Column", "Trackbars", tLC, 100, nothing)
@@ -64,22 +73,23 @@ def warp_perspective_config(img):
         cv2.imshow("Original", newImg)
         img = newImg
 
-    data["warp_perspective"] = {
-        "tLC": tLC,
-        "tLR": tLR,
-        "tRC": tRC,
-        "tRR": tRR,
-        "bLC": bLC,
-        "bLR": bLR,
-        "bRC": bRC,
-        "bRR": bRR,
-    }
-    with open("config.json", "w") as file:
-        json.dump(data, file, sort_keys=True, indent=4)
+    database_controller.update_warp_perspective_data(
+        {
+            "bLC": bLC,
+            "bLR": bLR,
+            "bRC": bRC,
+            "bRR": bRR,
+            "tLC": tLC,
+            "tLR": tLR,
+            "tRC": tRC,
+            "tRR": tRR,
+        }
+    )
+
     return
 
 
-def get_pixel_values(img):
+def get_pixel_values(img: np.ndarray):
     row, col, _ = img.shape
 
     def nothing(x):
@@ -89,7 +99,8 @@ def get_pixel_values(img):
     cv2.resizeWindow("Pixel Value Trackbar", 600, 200)  # width, height
     cv2.createTrackbar("Row Number", "Pixel Value Trackbar", 350, row, nothing)
     cv2.createTrackbar("Column Number", "Pixel Value Trackbar", 30, col, nothing)
-
+    row_number = 0
+    col_number = 0
     while True:
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
@@ -101,16 +112,15 @@ def get_pixel_values(img):
 
         cv2.imshow("Getting Pixel Value", newImg)
     cv2.destroyAllWindows()
+    print(f"Pixel value is Col:{col_number}, Row: {row_number}")
     return
 
 
-def ball_edge_detection_config(img):
+def ball_edge_detection_config(img: np.ndarray, database_controller: Database):
 
-    data = None
-    with open("config.json", "r") as file:
-        data = json.load(file, parse_int=None)
-
-    lower, upper = data["ball_edge_detection"].values()
+    lower, upper = itemgetter("lower", "upper")(
+        database_controller.get_ball_edge_detection_data()
+    )
 
     def nothing(x):
         pass
@@ -136,9 +146,10 @@ def ball_edge_detection_config(img):
 
         img = newImg
         cv2.imshow("Canny", canny)
-    data["ball_edge_detection"] = {"lower": lower, "upper": upper}
-    with open("config.json", "w") as file:
-        json.dump(data, file, sort_keys=True, indent=4)
+    database_controller.update_ball_edge_detection_data(
+        {"lower": lower, "upper": upper}
+    )
+
     return canny
 
 
