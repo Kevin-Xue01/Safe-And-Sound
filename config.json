@@ -1,7 +1,19 @@
 {
     "ball_edge_detection": {
-        "lower": 258,
+        "lower": 263,
         "upper": 11
+    },
+    "green_mask": {
+        "lower_bound": [
+            0,
+            85,
+            0
+        ],
+        "upper_bound": [
+            234,
+            164,
+            44
+        ]
     },
     "warp_perspective": {
         "bLC": 0,
