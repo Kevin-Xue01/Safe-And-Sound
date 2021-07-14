@@ -19,7 +19,7 @@ def main():
     # ball_edge_detection_config(img)
     # change_rectangle_mask_color_threshold(img)
     # change_rectangle_polygon_contour_params(img)
-    change_ball_mask_color_threshold(img)
+    change_ball_mask_params(img)
 
     return
 
@@ -315,9 +315,21 @@ def change_rectangle_polygon_contour_params(img: np.ndarray):
     cv2.destroyAllWindows()
 
 
-def change_ball_mask_color_threshold(img: np.ndarray):
+def change_ball_mask_params(img: np.ndarray):
 
-    lower_bound, upper_bound = itemgetter("lower_bound", "upper_bound")(
+    (
+        lower_bound,
+        upper_bound,
+        blur_kernel_size,
+        sigma_x_and_sigma_y,
+        erode_and_dilate_kernel_size,
+    ) = itemgetter(
+        "lower_bound",
+        "upper_bound",
+        "blur_kernel_size",
+        "sigma_x_and_sigma_y",
+        "erode_and_dilate_kernel_size",
+    )(
         database_controller.get_ball_mask_data()
     )
 
@@ -344,6 +356,7 @@ def change_ball_mask_color_threshold(img: np.ndarray):
     cv2.createTrackbar(
         "Upper Red Threshold", "Ball Mask Trackbar", upper_bound[2], 255, nothing
     )
+
     mask = None
     while True:
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
@@ -367,15 +380,22 @@ def change_ball_mask_color_threshold(img: np.ndarray):
         upper_red_threshold = cv2.getTrackbarPos(
             "Upper Red Threshold", "Ball Mask Trackbar"
         )
+
+        blurred = cv2.GaussianBlur(
+            img, (blur_kernel_size, blur_kernel_size), sigma_x_and_sigma_y
+        )
         lower_bound_for_green = np.array(
             [lower_blue_threshold, lower_green_threshold, lower_red_threshold]
         )
         upper_bound_for_green = np.array(
             [upper_blue_threshold, upper_green_threshold, upper_red_threshold]
         )
-        newMask = cv2.inRange(img, lower_bound_for_green, upper_bound_for_green)
-        kernel = np.ones((5, 5), np.uint8)
+        newMask = cv2.inRange(blurred, lower_bound_for_green, upper_bound_for_green)
+        kernel = np.ones(
+            (erode_and_dilate_kernel_size, erode_and_dilate_kernel_size), np.uint8
+        )
         newMask = cv2.erode(newMask, kernel)
+        newMask = cv2.dilate(newMask, kernel)
         cv2.imshow("Ball Mask", newMask)
         mask = newMask
 
@@ -391,6 +411,9 @@ def change_ball_mask_color_threshold(img: np.ndarray):
                 upper_green_threshold,
                 upper_red_threshold,
             ],
+            "blur_kernel_size": blur_kernel_size,
+            "sigma_x_and_sigma_y": sigma_x_and_sigma_y,
+            "erode_and_dilate_kernel_size": erode_and_dilate_kernel_size,
         }
     )
     cv2.destroyAllWindows()

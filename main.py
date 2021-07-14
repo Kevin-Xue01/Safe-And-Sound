@@ -4,9 +4,8 @@ from database import Database
 from operator import itemgetter
 import copy
 from util import Util
-import json
 
-with_video = False
+with_video = True
 
 
 def main():
@@ -17,9 +16,8 @@ def main():
     else:
         img = util_controller.get_warped_color_image()
 
-        # process_green_rectangle(copy.deepcopy(img), database_controller)
-        apply_ball_mask(img, database_controller.get_ball_mask_data())
-        # process_ball(copy.deepcopy(img), database_controller)
+        process_green_rectangle(copy.deepcopy(img), database_controller)
+        process_ball(copy.deepcopy(img), database_controller)
     return
 
 
@@ -28,7 +26,7 @@ def process_green_rectangle(img, database_controller: Database):
     mask = apply_rectangle_mask(img, database_controller.get_rectangle_mask_data())
     Util.freeze_current_image(mask, "Mask")
     rectangle_contours = find_green_rectangle_contours(mask)
-    find_green_rectangle_polygon(
+    top, bottom = find_green_rectangle_polygon(
         rectangle_contours,
         img,
         database_controller.get_rectangle_polygon_contour_data(),
@@ -38,14 +36,17 @@ def process_green_rectangle(img, database_controller: Database):
     return
 
 
-# def process_ball(img, database_controller: Database):
-#     canny = detect_ball_edge(img, database_controller.get_ball_edge_detection_data())
-#     Util.freeze_current_image(canny, "Canny")
-#     ball_contours = find_ball_contours(canny)
-#     find_ball_polygon(ball_contours, img)
-#     Util.freeze_current_image(img, "Find Ball Polygon")
+def process_ball(img, database_controller: Database):
+    mask = apply_ball_mask(img, database_controller.get_ball_mask_data())
+    Util.freeze_current_image(mask, "Ball Mask")
+    ball_contours = find_ball_contours(mask)
+    center = find_ball_polygon(ball_contours, img)
 
-#     return
+    return
+
+
+def process_state(top, bottom, center):
+    pass
 
 
 def warp_perspective(img: np.ndarray, config_data):
@@ -86,9 +87,10 @@ def start_recording_video():
             ret,
             frame,
         ) = cap.read()
-        mask = apply_rectangle_mask(frame)
-        contours = find_green_rectangle_contours(mask)
-        find_green_rectangle_polygon(contours, frame)
+        # mask = apply_rectangle_mask(frame)
+        # contours = find_green_rectangle_contours(mask)
+        # find_green_rectangle_polygon(contours, frame)
+        frame = cv2.flip(frame, 1)
         cv2.imshow("camera", frame)
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
@@ -112,10 +114,14 @@ def find_green_rectangle_contours(mask):
     return contours
 
 
-def find_green_rectangle_polygon(contours, img, config_data):
+def find_green_rectangle_polygon(contours, img: np.ndarray, config_data):
+    rows, _, _ = img.shape
+
     area_threshold, lower_length_threshold, upper_length_threshold = itemgetter(
         "area_threshold", "lower_length_threshold", "upper_length_threshold"
     )(config_data)
+    bottom = 0
+    top = rows
     for cnt in contours:
         area = cv2.contourArea(cnt)
         approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
@@ -125,37 +131,17 @@ def find_green_rectangle_polygon(contours, img, config_data):
             and len(approx) <= upper_length_threshold
         ):
             cv2.drawContours(img, [approx], 0, (0, 0, 0), 3)  # copy the image
+            approx = np.squeeze(approx)
+            curr_bottom = np.amax(approx, axis=0)[1]
+            curr_top = np.amin(approx, axis=0)[1]
 
-
-# def detect_ball_edge(img, config_data):
-#     # img = cv2.imread("assets/main_view.jpg")
-#     cv2.imshow("A", img)
-#     with open("config.json", "r") as file:
-#         data = json.load(file, parse_int=None)
-#     lower, upper = itemgetter("lower", "upper")(data["ball_edge_detection"])
-#     # lower, upper = itemgetter("lower", "upper")(config_data)
-
-#     canny = cv2.Canny(img, lower, upper)
-#     print(lower, upper)
-#     # cv2.imshow("A", canny)
-#     # cv2.imshow("B", img)
-#     return canny
-
-
-# def find_ball_contours(ball_canny):
-#     contours, _ = cv2.findContours(ball_canny, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-#     return contours
-
-
-# def find_ball_polygon(contours, img):
-#     for cnt in contours:
-#         area = cv2.contourArea(cnt)
-#         approx = cv2.approxPolyDP(cnt, 0.011 * cv2.arcLength(cnt, True), True)
-#         x = approx.ravel()[0]
-#         y = approx.ravel()[1]
-#         if area > 30 and area < 40 and len(approx) >= 17:
-#             cv2.drawContours(img, [approx], 0, (0, 0, 0), 3)
-#             cv2.putText(img, "Circle", (x, y), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 0))
+            if curr_bottom > bottom:
+                bottom = curr_bottom
+            if curr_top < top:
+                top = curr_top
+    # cv2.line(img, (0, bottom), (cols, bottom), (0, 0, 0), thickness=5)
+    # cv2.line(img, (0, top), (cols, top), (0, 0, 0), thickness=5)
+    return top, bottom
 
 
 def apply_ball_mask(img, config_data):
@@ -165,13 +151,13 @@ def apply_ball_mask(img, config_data):
         upper_bound,
         blur_kernel_size,
         sigma_x_and_sigma_y,
-        erode_kernel_size,
+        erode_and_dilate_kernel_size,
     ) = itemgetter(
         "lower_bound",
         "upper_bound",
-        "kernel_size",
+        "blur_kernel_size",
         "sigma_x_and_sigma_y",
-        "erode_kernel_size",
+        "erode_and_dilate_kernel_size",
     )(
         config_data
     )
@@ -181,11 +167,42 @@ def apply_ball_mask(img, config_data):
     lower_bound_np_arr = np.array(lower_bound)
     upper_bound_np_arr = np.array(upper_bound)
     mask = cv2.inRange(blurred, lower_bound_np_arr, upper_bound_np_arr)
-    kernel = np.ones((erode_kernel_size, erode_kernel_size), np.uint8)
+    kernel = np.ones(
+        (erode_and_dilate_kernel_size, erode_and_dilate_kernel_size), np.uint8
+    )
     mask = cv2.erode(mask, kernel)
-    cv2.imshow("mask", mask)
-    cv2.waitKey(0)
+    mask = cv2.dilate(mask, kernel)
     return mask
+
+
+def find_ball_contours(mask):
+    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    return contours
+
+
+def find_ball_polygon(contours, img: np.ndarray):
+    rows, cols, _ = img.shape
+
+    center = None
+    if len(contours) > 0:
+        # find the largest contour in the mask, then use
+        # it to compute the minimum enclosing circle and
+        # centroid
+        c = max(contours, key=cv2.contourArea)
+        # ((x, y), radius) = cv2.minEnclosingCircle(c)
+        # print(x, y, radius)
+        M = cv2.moments(c)
+        center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+        # only proceed if the radius meets a minimum size
+        # if radius > 10:
+        #     # draw the circle and centroid on the frame,
+        #     # then update the list of tracked points
+        #     cv2.circle(img, (int(x), int(y)), int(radius), (0, 255, 255), 2)
+        #     cv2.circle(img, center, 5, (0, 0, 255), -1)
+    # cv2.line(img, (0, center[1]), (cols, center[1]), (0, 0, 0), thickness=5)
+    cv2.imshow("Ball", img)
+    cv2.waitKey(0)
+    return center[1]
 
 
 if __name__ == "__main__":
