@@ -5,7 +5,7 @@ from operator import itemgetter
 import copy
 from util import Util
 
-with_video = True
+with_video = False
 
 
 def main():
@@ -16,8 +16,9 @@ def main():
     else:
         img = util_controller.get_warped_color_image()
 
-        process_green_rectangle(copy.deepcopy(img), database_controller)
-        process_ball(copy.deepcopy(img), database_controller)
+        top, bottom = process_green_rectangle(copy.deepcopy(img), database_controller)
+        ball = process_ball(copy.deepcopy(img), database_controller)
+        print(f"Gas flow rate is {process_state(top, bottom, ball)}")
     return
 
 
@@ -33,7 +34,7 @@ def process_green_rectangle(img, database_controller: Database):
     )
     Util.freeze_current_image(img, "Find Green Rectangle Polygon")
 
-    return
+    return top, bottom
 
 
 def process_ball(img, database_controller: Database):
@@ -42,11 +43,16 @@ def process_ball(img, database_controller: Database):
     ball_contours = find_ball_contours(mask)
     center = find_ball_polygon(ball_contours, img)
 
-    return
+    return center
 
 
 def process_state(top, bottom, ball):
-    pass
+    if ball > bottom:
+        return "too low"
+    elif ball < top:
+        return "too high"
+    else:
+        return "normal"
 
 
 def warp_perspective(img: np.ndarray, config_data):
