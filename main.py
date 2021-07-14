@@ -16,37 +16,45 @@ def main():
     else:
         img = util_controller.get_warped_color_image()
 
-        process_green_rectangle(copy.deepcopy(img), database_controller)
-        process_ball(copy.deepcopy(img), database_controller)
+        top, bottom = process_green_rectangle(copy.deepcopy(img), database_controller)
+        ball = process_ball(copy.deepcopy(img), database_controller)
+        print(f'Gas flow rate is {process_state(top, bottom, ball)}')
     return
 
 
 def process_green_rectangle(img, database_controller: Database):
 
     mask = apply_rectangle_mask(img, database_controller.get_rectangle_mask_data())
-    Util.freeze_current_image(mask, "Mask")
+    #Util.freeze_current_image(mask, "Mask")
     rectangle_contours = find_green_rectangle_contours(mask)
     top, bottom = find_green_rectangle_polygon(
         rectangle_contours,
         img,
         database_controller.get_rectangle_polygon_contour_data(),
     )
-    Util.freeze_current_image(img, "Find Green Rectangle Polygon")
+    #Util.freeze_current_image(img, "Find Green Rectangle Polygon")
 
-    return
+    return top, bottom
 
 
 def process_ball(img, database_controller: Database):
     mask = apply_ball_mask(img, database_controller.get_ball_mask_data())
-    Util.freeze_current_image(mask, "Ball Mask")
+    #Util.freeze_current_image(mask, "Ball Mask")
     ball_contours = find_ball_contours(mask)
-    center = find_ball_polygon(ball_contours, img)
+    center = find_ball_polygon(ball_contours, img, database_controller.get_ball_polygon_data())
 
-    return
+    return center
 
 
 def process_state(top, bottom, ball):
-    pass
+    if ball ==-1:
+        return 'cannot find ball'
+    if ball > bottom:
+        return 'too low'
+    elif ball < top:
+        return 'too high'
+    else:
+        return 'normal'
 
 
 def warp_perspective(img: np.ndarray, config_data):
@@ -81,16 +89,21 @@ def warp_perspective(img: np.ndarray, config_data):
 
 
 def start_recording_video():
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    cap = cv2.VideoCapture(0)
+    database_controller = Database()
     while True:
         (
             ret,
             frame,
         ) = cap.read()
-        # mask = apply_rectangle_mask(frame)
-        # contours = find_green_rectangle_contours(mask)
-        # find_green_rectangle_polygon(contours, frame)
+        
         frame = cv2.flip(frame, 1)
+        frame = frame[:,s[1]//2-160:s[1]//2+160,:]
+        
+        top, bottom = process_green_rectangle(copy.deepcopy(frame), database_controller)
+        ball = process_ball(copy.deepcopy(frame), database_controller)
+        print(f'Gas flow rate is {process_state(top, bottom, ball)}')
+        
         cv2.imshow("camera", frame)
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
@@ -180,19 +193,30 @@ def find_ball_contours(mask):
     return contours
 
 
-def find_ball_polygon(contours, img: np.ndarray):
+def find_ball_polygon(contours, img: np.ndarray, config_data):
     rows, cols, _ = img.shape
 
     center = None
+    (
+        area_threshold
+    ) = itemgetter(
+        "area_threshold"
+    )(
+        config_data
+    )
     if len(contours) > 0:
         # find the largest contour in the mask, then use
         # it to compute the minimum enclosing circle and
         # centroid
         c = max(contours, key=cv2.contourArea)
+        area = cv2.contourArea(c)
         # ((x, y), radius) = cv2.minEnclosingCircle(c)
         # print(x, y, radius)
-        M = cv2.moments(c)
-        center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+        if area > area_threshold:
+            M = cv2.moments(c)
+            center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+        else:
+            return -1
         # only proceed if the radius meets a minimum size
         # if radius > 10:
         #     # draw the circle and centroid on the frame,
@@ -200,9 +224,10 @@ def find_ball_polygon(contours, img: np.ndarray):
         #     cv2.circle(img, (int(x), int(y)), int(radius), (0, 255, 255), 2)
         #     cv2.circle(img, center, 5, (0, 0, 255), -1)
     # cv2.line(img, (0, center[1]), (cols, center[1]), (0, 0, 0), thickness=5)
-    cv2.imshow("Ball", img)
-    cv2.waitKey(0)
-    return center[1]
+    #cv2.imshow("Ball", img)
+    #cv2.waitKey(0)
+    
+    return center[1] if center else -1
 
 
 if __name__ == "__main__":

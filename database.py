@@ -41,6 +41,11 @@ class Database:
     def get_ball_polygon_data(self):
         return self.data["ball_polygon"]
 
+    def update_ball_polygon_data(self, data):
+        with open("config.json", "w") as file:
+            self.data["ball_polygon"] = data
+            json.dump(self.data, file, indent=4)
+
     def get_ball_mask_data(self):
         return self.data["ball_mask"]
 

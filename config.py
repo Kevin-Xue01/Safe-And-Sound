@@ -11,20 +11,28 @@ database_controller = Database()
 
 
 def main():
-
-    img = Util.get_color_image()
+    cap = cv2.VideoCapture(0)
+    database_controller = Database()
+        
+    change_rectangle_mask_color_threshold(cap)
+    change_rectangle_polygon_contour_params(cap)
+    change_ball_mask_params(cap)
+    
+        
+        # top, bottom = process_green_rectangle(copy.deepcopy(frame), database_controller)
+        # ball = process_ball(copy.deepcopy(frame), database_controller)
+        # print(f'Gas flow rate is {process_state(top, bottom, ball)}')
+        
+    
     # get_pixel_values(img)
     # change_perspective_warp_params(img)
-    # img = Util.warp_perspective(img)
-    # ball_edge_detection_config(img)
-    # change_rectangle_mask_color_threshold(img)
-    # change_rectangle_polygon_contour_params(img)
-    change_ball_mask_params(img)
+
+    
 
     return
 
 
-def change_perspective_warp_params(img: np.ndarray):
+def change_perspective_warp_params(cap):
     def nothing(x):
         pass
 
@@ -50,12 +58,16 @@ def change_perspective_warp_params(img: np.ndarray):
     cv2.createTrackbar("Bottom Right Column", "Trackbars", bRC, 100, nothing)
     cv2.createTrackbar("Bottom Right Row", "Trackbars", bRR, 100, nothing)
 
-    rows, cols, _ = img.shape
+    
 
     while True:
+        
+        ret, frame = cap.read()
+        rows, cols, _ = frame.shape
+        
+        frame = cv2.flip(frame, 1)
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
-        newImg = copy.deepcopy(img)
 
         tLC = cv2.getTrackbarPos("Top Left Column", "Trackbars")
         tLR = cv2.getTrackbarPos("Top Left Row", "Trackbars")
@@ -76,10 +88,9 @@ def change_perspective_warp_params(img: np.ndarray):
         )
         pts2 = np.float32([[cols * 0.1, rows], [cols, rows], [0, 0], [cols, 0]])
         matrix = cv2.getPerspectiveTransform(pts1, pts2)
-        distorted = cv2.warpPerspective(newImg, matrix, (cols, rows))
+        distorted = cv2.warpPerspective(frame, matrix, (cols, rows))
         cv2.imshow("Distorted", distorted)
-        cv2.imshow("Original", newImg)
-        img = newImg
+        cv2.imshow("Original", frame)
 
     database_controller.update_warp_perspective_data(
         {
@@ -161,7 +172,7 @@ def get_pixel_values(img: np.ndarray):
 #     cv2.destroyAllWindows()
 
 
-def change_rectangle_mask_color_threshold(img: np.ndarray):
+def change_rectangle_mask_color_threshold(cap):
 
     lower_bound, upper_bound = itemgetter("lower_bound", "upper_bound")(
         database_controller.get_rectangle_mask_data()
@@ -192,6 +203,11 @@ def change_rectangle_mask_color_threshold(img: np.ndarray):
     )
     mask = None
     while True:
+        ret, frame = cap.read()
+        rows, cols, _ = frame.shape
+        
+        frame = cv2.flip(frame, 1)
+        
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
         newMask = copy.deepcopy(mask)
@@ -219,8 +235,8 @@ def change_rectangle_mask_color_threshold(img: np.ndarray):
         upper_bound_for_green = np.array(
             [upper_blue_threshold, upper_green_threshold, upper_red_threshold]
         )
-        newMask = cv2.inRange(img, lower_bound_for_green, upper_bound_for_green)
-        kernel = np.ones((5, 5), np.uint8)
+        newMask = cv2.inRange(frame, lower_bound_for_green, upper_bound_for_green)
+        kernel = np.ones((1, 1), np.uint8)
         newMask = cv2.erode(newMask, kernel)
         cv2.imshow("Green Mask", newMask)
         mask = newMask
@@ -242,10 +258,8 @@ def change_rectangle_mask_color_threshold(img: np.ndarray):
     cv2.destroyAllWindows()
 
 
-def change_rectangle_polygon_contour_params(img: np.ndarray):
-    contours = find_green_rectangle_contours(
-        apply_rectangle_mask(img, database_controller.get_rectangle_mask_data())
-    )
+def change_rectangle_polygon_contour_params(cap):
+    
 
     area_threshold, lower_length_threshold, upper_length_threshold = itemgetter(
         "area_threshold", "lower_length_threshold", "upper_length_threshold"
@@ -279,9 +293,16 @@ def change_rectangle_polygon_contour_params(img: np.ndarray):
     )
 
     while True:
+        ret, frame = cap.read()
+        rows, cols, _ = frame.shape
+        
+        frame = cv2.flip(frame, 1)
+        
+        contours = find_green_rectangle_contours(
+            apply_rectangle_mask(frame, database_controller.get_rectangle_mask_data())
+        )
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
-        newImg = copy.deepcopy(img)
         area_threshold = cv2.getTrackbarPos(
             "Area Threshold", "Rectangle Polygon Contour Trackbar"
         )
@@ -300,9 +321,8 @@ def change_rectangle_polygon_contour_params(img: np.ndarray):
                 and len(approx) >= lower_length_threshold
                 and len(approx) <= upper_length_threshold
             ):
-                print(area)
-                cv2.drawContours(newImg, [approx], 0, (0, 0, 0), 3)
-        cv2.imshow("Original", newImg)
+                cv2.drawContours(frame, [approx], 0, (0, 0, 0), 3)
+        cv2.imshow("Original", frame)
 
     database_controller.update_rectangle_polygon_contour_data(
         {
@@ -315,7 +335,7 @@ def change_rectangle_polygon_contour_params(img: np.ndarray):
     cv2.destroyAllWindows()
 
 
-def change_ball_mask_params(img: np.ndarray):
+def change_ball_mask_params(cap):
 
     (
         lower_bound,
@@ -332,6 +352,7 @@ def change_ball_mask_params(img: np.ndarray):
     )(
         database_controller.get_ball_mask_data()
     )
+    area_threshold = itemgetter("area_threshold")(database_controller.get_ball_polygon_data())
 
     def nothing(x):
         pass
@@ -356,9 +377,18 @@ def change_ball_mask_params(img: np.ndarray):
     cv2.createTrackbar(
         "Upper Red Threshold", "Ball Mask Trackbar", upper_bound[2], 255, nothing
     )
+    cv2.createTrackbar(
+        "Area Threshold", "Ball Mask Trackbar", area_threshold, 1000, nothing
+    )
+
 
     mask = None
     while True:
+        ret, frame = cap.read()
+        rows, cols, _ = frame.shape
+        
+        frame = cv2.flip(frame, 1)
+        
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
         newMask = copy.deepcopy(mask)
@@ -380,9 +410,12 @@ def change_ball_mask_params(img: np.ndarray):
         upper_red_threshold = cv2.getTrackbarPos(
             "Upper Red Threshold", "Ball Mask Trackbar"
         )
+        area_threshold = cv2.getTrackbarPos(
+            "Area Threshold", "Ball Mask Trackbar"
+        )
 
         blurred = cv2.GaussianBlur(
-            img, (blur_kernel_size, blur_kernel_size), sigma_x_and_sigma_y
+            frame, (blur_kernel_size, blur_kernel_size), sigma_x_and_sigma_y
         )
         lower_bound_for_green = np.array(
             [lower_blue_threshold, lower_green_threshold, lower_red_threshold]
@@ -396,6 +429,20 @@ def change_ball_mask_params(img: np.ndarray):
         )
         newMask = cv2.erode(newMask, kernel)
         newMask = cv2.dilate(newMask, kernel)
+        
+        contours = find_ball_contours(newMask)
+        
+        if len(contours) > 0:
+            c = max(contours, key=cv2.contourArea)
+            area = cv2.contourArea(c)
+            if area > area_threshold:
+                M = cv2.moments(c)
+                center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+            else:
+                return -1
+            cv2.circle(frame, center, 5, (0, 0, 255), -1)
+        
+        cv2.imshow("Ball Polygon", frame)
         cv2.imshow("Ball Mask", newMask)
         mask = newMask
 
@@ -416,8 +463,78 @@ def change_ball_mask_params(img: np.ndarray):
             "erode_and_dilate_kernel_size": erode_and_dilate_kernel_size,
         }
     )
+    database_controller.update_ball_polygon_data(
+        {
+            "area_threshold": area_threshold
+        }
+    )
+    
     cv2.destroyAllWindows()
 
+def change_ball_polygon_params(mask, cap):
+    contours = find_ball_contours(mask)
+
+    center = None
+    area_threshold = itemgetter("area_threshold")(database_controller.get_ball_polygon_data())
+    
+    def nothing(x):
+        pass
+
+    cv2.namedWindow("Ball Polygon Trackbar")
+    cv2.resizeWindow("Ball Polygon Trackbar", 800, 600)  # width, height
+    cv2.createTrackbar(
+        "Area Threshold", "Ball Polygon Trackbar", area_threshold, 1000, nothing
+    )
+
+    while True:
+        ret, frame = cap.read()
+        
+        frame = cv2.flip(frame, 1)
+        
+        if cv2.waitKey(1) == ord("q"):  # press q to terminate program
+            break
+        
+        area_threshold = cv2.getTrackbarPos(
+            "Area Threshold", "Ball Polygon Trackbar"
+        )
+        center = (0,0)
+        if len(contours) > 0:
+            # find the largest contour in the mask, then use
+            # it to compute the minimum enclosing circle and
+            # centroid
+            c = max(contours, key=cv2.contourArea)
+            area = cv2.contourArea(c)
+            # ((x, y), radius) = cv2.minEnclosingCircle(c)
+            # print(x, y, radius)
+            if area > area_threshold:
+                M = cv2.moments(c)
+                center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+            else:
+                return -1
+            cv2.circle(frame, center, 5, (0, 0, 255), -1)
+            # only proceed if the radius meets a minimum size
+            # if radius > 10:
+            #     # draw the circle and centroid on the frame,
+            #     # then update the list of tracked points
+            #     cv2.circle(img, (int(x), int(y)), int(radius), (0, 255, 255), 2)
+            #     cv2.circle(img, center, 5, (0, 0, 255), -1)
+        # cv2.line(img, (0, center[1]), (cols, center[1]), (0, 0, 0), thickness=5)
+        
+        
+        cv2.imshow("Ball Polygon", frame)
+        #cv2.waitKey(0)
+        
+    database_controller.update_ball_polygon_data(
+        {
+            "area_threshold": area_threshold
+        }
+    )
+    
+    return center[1] if center else -1
+
+def find_ball_contours(mask):
+    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    return contours
 
 if __name__ == "__main__":
     main()
