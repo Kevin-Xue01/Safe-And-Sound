@@ -45,10 +45,6 @@ def process_ball(img, database_controller: Database):
     return
 
 
-def process_state(top, bottom, center):
-    pass
-
-
 def warp_perspective(img: np.ndarray, config_data):
     rows, cols, _ = img.shape  # Color
     # rows, cols = img.shape  # Gray scale
