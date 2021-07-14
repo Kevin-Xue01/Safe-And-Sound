@@ -17,3 +17,7 @@ Part 2
 
 Alternatives:
 Motion Detection
+
+Relevant Info:
+Ball lower [85 33 26]
+Ball upper [157  43  20]

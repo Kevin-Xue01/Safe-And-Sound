@@ -14,16 +14,21 @@ class Database:
             self.data["warp_perspective"] = data
             json.dump(self.data, file, indent=4)
 
-    def get_green_mask_data(self):
-        return self.data["green_mask"]
+    def get_rectangle_mask_data(self):
+        return self.data["rectangle_mask"]
 
-    def update_green_mask_data(self, data):
+    def update_rectangle_mask_data(self, data):
         with open("config.json", "w") as file:
-            self.data["green_mask"] = data
+            self.data["rectangle_mask"] = data
             json.dump(self.data, file, indent=4)
 
-    def get_green_polygon_data(self):
-        return self.data["green_polygon"]
+    def get_rectangle_polygon_contour_data(self):
+        return self.data["rectangle_polygon_contour"]
+
+    def update_rectangle_polygon_contour_data(self, data):
+        with open("config.json", "w") as file:
+            self.data["rectangle_polygon_contour"] = data
+            json.dump(self.data, file, indent=4)
 
     def get_ball_edge_detection_data(self):
         return self.data["ball_edge_detection"]
@@ -35,3 +40,11 @@ class Database:
 
     def get_ball_polygon_data(self):
         return self.data["ball_polygon"]
+
+    def get_ball_mask_data(self):
+        return self.data["ball_mask"]
+
+    def update_ball_mask_data(self, data):
+        with open("config.json", "w") as file:
+            self.data["ball_mask"] = data
+            json.dump(self.data, file, indent=4)

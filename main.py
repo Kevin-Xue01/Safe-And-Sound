@@ -11,42 +11,44 @@ with_video = False
 
 def main():
     database_controller = Database()
-
+    util_controller = Util(database_controller=database_controller)
     if with_video:
         start_recording_video()
     else:
-        img = cv2.imread("assets/main_view.jpg")
-        img = warp_perspective(img, database_controller.get_warp_perspective_data())
+        img = util_controller.get_warped_color_image()
 
         # process_green_rectangle(copy.deepcopy(img), database_controller)
-        process_ball(copy.deepcopy(img), database_controller)
+        apply_ball_mask(img, database_controller.get_ball_mask_data())
+        # process_ball(copy.deepcopy(img), database_controller)
     return
 
 
 def process_green_rectangle(img, database_controller: Database):
 
-    mask = apply_green_mask(img, database_controller.get_green_mask_data())
+    mask = apply_rectangle_mask(img, database_controller.get_rectangle_mask_data())
     Util.freeze_current_image(mask, "Mask")
     rectangle_contours = find_green_rectangle_contours(mask)
     find_green_rectangle_polygon(
-        rectangle_contours, img, database_controller.get_green_polygon_data()
+        rectangle_contours,
+        img,
+        database_controller.get_rectangle_polygon_contour_data(),
     )
     Util.freeze_current_image(img, "Find Green Rectangle Polygon")
 
     return
 
 
-def process_ball(img, database_controller: Database):
-    canny = detect_ball_edge(img, database_controller.get_ball_edge_detection_data())
-    Util.freeze_current_image(canny, "Canny")
-    ball_contours = find_ball_contours(canny)
-    find_ball_polygon(ball_contours, img)
-    Util.freeze_current_image(img, "Find Ball Polygon")
+# def process_ball(img, database_controller: Database):
+#     canny = detect_ball_edge(img, database_controller.get_ball_edge_detection_data())
+#     Util.freeze_current_image(canny, "Canny")
+#     ball_contours = find_ball_contours(canny)
+#     find_ball_polygon(ball_contours, img)
+#     Util.freeze_current_image(img, "Find Ball Polygon")
 
-    return
+#     return
 
 
-def warp_perspective(img, config_data):
+def warp_perspective(img: np.ndarray, config_data):
     rows, cols, _ = img.shape  # Color
     # rows, cols = img.shape  # Gray scale
     for i in config_data:
@@ -84,7 +86,7 @@ def start_recording_video():
             ret,
             frame,
         ) = cap.read()
-        mask = apply_green_mask(frame)
+        mask = apply_rectangle_mask(frame)
         contours = find_green_rectangle_contours(mask)
         find_green_rectangle_polygon(contours, frame)
         cv2.imshow("camera", frame)
@@ -95,7 +97,7 @@ def start_recording_video():
     cv2.destroyAllWindows()
 
 
-def apply_green_mask(img, config_data):
+def apply_rectangle_mask(img, config_data):
     lower_bound, upper_bound = itemgetter("lower_bound", "upper_bound")(config_data)
     lower_bound_np_arr = np.array(lower_bound)
     upper_bound_np_arr = np.array(upper_bound)
@@ -125,32 +127,65 @@ def find_green_rectangle_polygon(contours, img, config_data):
             cv2.drawContours(img, [approx], 0, (0, 0, 0), 3)  # copy the image
 
 
-def detect_ball_edge(img, config_data):
-    img = cv2.imread("assets/main_view.jpg")
-    with open("config.json", "r") as file:
-        data = json.load(file, parse_int=None)
-    lower, upper = itemgetter("lower", "upper")(data["ball_edge_detection"])
-    canny = cv2.Canny(img, lower, upper)
-    print(lower, upper)
-    cv2.imshow("A", canny)
-    cv2.imshow("B", img)
-    return canny
+# def detect_ball_edge(img, config_data):
+#     # img = cv2.imread("assets/main_view.jpg")
+#     cv2.imshow("A", img)
+#     with open("config.json", "r") as file:
+#         data = json.load(file, parse_int=None)
+#     lower, upper = itemgetter("lower", "upper")(data["ball_edge_detection"])
+#     # lower, upper = itemgetter("lower", "upper")(config_data)
+
+#     canny = cv2.Canny(img, lower, upper)
+#     print(lower, upper)
+#     # cv2.imshow("A", canny)
+#     # cv2.imshow("B", img)
+#     return canny
 
 
-def find_ball_contours(ball_canny):
-    contours, _ = cv2.findContours(ball_canny, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    return contours
+# def find_ball_contours(ball_canny):
+#     contours, _ = cv2.findContours(ball_canny, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+#     return contours
 
 
-def find_ball_polygon(contours, img):
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        approx = cv2.approxPolyDP(cnt, 0.011 * cv2.arcLength(cnt, True), True)
-        x = approx.ravel()[0]
-        y = approx.ravel()[1]
-        if area > 30 and area < 40 and len(approx) >= 17:
-            cv2.drawContours(img, [approx], 0, (0, 0, 0), 3)
-            cv2.putText(img, "Circle", (x, y), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 0))
+# def find_ball_polygon(contours, img):
+#     for cnt in contours:
+#         area = cv2.contourArea(cnt)
+#         approx = cv2.approxPolyDP(cnt, 0.011 * cv2.arcLength(cnt, True), True)
+#         x = approx.ravel()[0]
+#         y = approx.ravel()[1]
+#         if area > 30 and area < 40 and len(approx) >= 17:
+#             cv2.drawContours(img, [approx], 0, (0, 0, 0), 3)
+#             cv2.putText(img, "Circle", (x, y), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 0))
+
+
+def apply_ball_mask(img, config_data):
+
+    (
+        lower_bound,
+        upper_bound,
+        blur_kernel_size,
+        sigma_x_and_sigma_y,
+        erode_kernel_size,
+    ) = itemgetter(
+        "lower_bound",
+        "upper_bound",
+        "kernel_size",
+        "sigma_x_and_sigma_y",
+        "erode_kernel_size",
+    )(
+        config_data
+    )
+    blurred = cv2.GaussianBlur(
+        img, (blur_kernel_size, blur_kernel_size), sigma_x_and_sigma_y
+    )
+    lower_bound_np_arr = np.array(lower_bound)
+    upper_bound_np_arr = np.array(upper_bound)
+    mask = cv2.inRange(blurred, lower_bound_np_arr, upper_bound_np_arr)
+    kernel = np.ones((erode_kernel_size, erode_kernel_size), np.uint8)
+    mask = cv2.erode(mask, kernel)
+    cv2.imshow("mask", mask)
+    cv2.waitKey(0)
+    return mask
 
 
 if __name__ == "__main__":

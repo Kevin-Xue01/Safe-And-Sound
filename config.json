@@ -1,9 +1,9 @@
 {
     "ball_edge_detection": {
-        "lower": 502,
-        "upper": 81
+        "lower": 451,
+        "upper": 0
     },
-    "green_mask": {
+    "rectangle_mask": {
         "lower_bound": [
             0,
             49,
@@ -15,19 +15,31 @@
             54
         ]
     },
-    "green_polygon": {
-        "area_threshold": 400,
+    "rectangle_polygon_contour": {
+        "area_threshold": 4432,
         "lower_length_threshold": 4,
-        "upper_length_threshold": 10
+        "upper_length_threshold": 5
     },
     "warp_perspective": {
         "bLC": 0,
         "bLR": 0,
         "bRC": 97,
         "bRR": 0,
-        "tLC": 17,
+        "tLC": 18,
         "tLR": 96,
         "tRC": 100,
         "tRR": 94
+    },
+    "ball_mask": {
+        "lower_bound": [
+            35,
+            3,
+            0
+        ],
+        "upper_bound": [
+            161,
+            61,
+            37
+        ]
     }
 }
