@@ -32,14 +32,17 @@
     },
     "ball_mask": {
         "lower_bound": [
-            35,
-            3,
+            45,
+            6,
             0
         ],
         "upper_bound": [
-            161,
-            61,
-            37
-        ]
+            125,
+            44,
+            32
+        ],
+        "blur_kernel_size": 7,
+        "sigma_x_and_sigma_y": 0,
+        "erode_and_dilate_kernel_size": 3
     }
 }
