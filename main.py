@@ -17,7 +17,7 @@ def main():
         img = util_controller.get_warped_color_image()
 
         top, bottom = process_green_rectangle(copy.deepcopy(img), database_controller)
-        ball = process_ball(copy.deepcopy(img), database_controller
+        ball = process_ball(copy.deepcopy(img), database_controller)
         print(f'Gas flow rate is {process_state(top, bottom, ball)}')
     return
 
