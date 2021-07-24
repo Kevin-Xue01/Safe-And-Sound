@@ -5,18 +5,18 @@
     },
     "rectangle_mask": {
         "lower_bound": [
-            0,
-            69,
+            10,
+            54,
             0
         ],
         "upper_bound": [
-            170,
-            208,
-            54
+            68,
+            137,
+            27
         ]
     },
     "rectangle_polygon_contour": {
-        "area_threshold": 247,
+        "area_threshold": 1646,
         "lower_length_threshold": 0,
         "upper_length_threshold": 38
     },
@@ -32,20 +32,20 @@
     },
     "ball_mask": {
         "lower_bound": [
-            183,
-            184,
-            185
+            0,
+            0,
+            0
         ],
         "upper_bound": [
-            255,
-            255,
-            255
+            54,
+            30,
+            24
         ],
         "blur_kernel_size": 7,
         "sigma_x_and_sigma_y": 0,
         "erode_and_dilate_kernel_size": 3
     },
     "ball_polygon": {
-        "area_threshold": 0
+        "area_threshold": 37
     }
 }

@@ -4,9 +4,15 @@ from database import Database
 from operator import itemgetter
 import copy
 from util import Util
+from  serial import Serial
+import time
 
-with_video = False
-
+with_video = True
+with_arduino = True
+if with_arduino:
+    
+    ser = Serial('/dev/ttyUSB0', 9600, timeout=1)
+    ser.flush()
 
 def main():
     database_controller = Database()
@@ -18,7 +24,8 @@ def main():
 
         top, bottom = process_green_rectangle(copy.deepcopy(img), database_controller)
         ball = process_ball(copy.deepcopy(img), database_controller)
-        print(f'Gas flow rate is {process_state(top, bottom, ball)}')
+        
+        ser.write(bytes(f'{process_state(top, bottom, ball)}\n', 'utf-8'))
     return
 
 
@@ -44,17 +51,23 @@ def process_ball(img, database_controller: Database):
     center = find_ball_polygon(ball_contours, img, database_controller.get_ball_polygon_data())
 
     return center
-
+    
+mapping =  {
+    '-2': 'out of bounds',
+    '-1': 'too low', 
+    '1': 'too high',
+    '0': 'normal'
+}
 
 def process_state(top, bottom, ball):
     if ball ==-1:
-        return 'cannot find ball'
+        return '-2', 'not found'
     if ball > bottom:
-        return 'too low'
+        return '-1', 'too low'
     elif ball < top:
-        return 'too high'
+        return '1', 'too high'
     else:
-        return 'normal'
+        return '0', 'normal'
 
 
 def warp_perspective(img: np.ndarray, config_data):
@@ -97,13 +110,17 @@ def start_recording_video():
             frame,
         ) = cap.read()
         
-        frame = cv2.flip(frame, 1)
+        #frame = cv2.flip(frame, 1)
+        s = frame.shape
         frame = frame[:,s[1]//2-160:s[1]//2+160,:]
         
         top, bottom = process_green_rectangle(copy.deepcopy(frame), database_controller)
         ball = process_ball(copy.deepcopy(frame), database_controller)
-        print(f'Gas flow rate is {process_state(top, bottom, ball)}')
-        
+        if with_arduino:
+            bnum, bmsg = process_state(top, bottom, ball)
+            time.sleep(1)
+            ser.write(bytes(f'{bnum}\n', 'utf-8'))
+            print(f'{bmsg}')
         cv2.imshow("camera", frame)
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
