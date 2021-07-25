@@ -14,7 +14,6 @@ with_frame_crop = True
 
 def main():
     cap = cv2.VideoCapture(0)
-    database_controller = Database()
 
     change_rectangle_mask_color_threshold(cap)
     change_rectangle_polygon_contour_params(cap)
