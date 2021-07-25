@@ -5,20 +5,20 @@
     },
     "rectangle_mask": {
         "lower_bound": [
-            10,
-            54,
+            60,
+            78,
             0
         ],
         "upper_bound": [
-            68,
-            137,
-            27
+            126,
+            160,
+            98
         ]
     },
     "rectangle_polygon_contour": {
-        "area_threshold": 1646,
-        "lower_length_threshold": 0,
-        "upper_length_threshold": 38
+        "area_threshold": 2473,
+        "lower_length_threshold": 4,
+        "upper_length_threshold": 15
     },
     "warp_perspective": {
         "bLC": 0,
@@ -46,6 +46,6 @@
         "erode_and_dilate_kernel_size": 3
     },
     "ball_polygon": {
-        "area_threshold": 37
+        "area_threshold": 58
     }
 }

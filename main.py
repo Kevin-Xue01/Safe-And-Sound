@@ -4,15 +4,16 @@ from database import Database
 from operator import itemgetter
 import copy
 from util import Util
-from  serial import Serial
+import serial
 import time
 
 with_video = True
-with_arduino = True
+with_arduino = False
 if with_arduino:
-    
-    ser = Serial('/dev/ttyUSB0', 9600, timeout=1)
+
+    ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=1)
     ser.flush()
+
 
 def main():
     database_controller = Database()
@@ -24,50 +25,49 @@ def main():
 
         top, bottom = process_green_rectangle(copy.deepcopy(img), database_controller)
         ball = process_ball(copy.deepcopy(img), database_controller)
-        
-        ser.write(bytes(f'{process_state(top, bottom, ball)}\n', 'utf-8'))
+
+        ser.write(bytes(f"{process_state(top, bottom, ball)}\n", "utf-8"))
     return
 
 
 def process_green_rectangle(img, database_controller: Database):
 
     mask = apply_rectangle_mask(img, database_controller.get_rectangle_mask_data())
-    #Util.freeze_current_image(mask, "Mask")
+    # Util.freeze_current_image(mask, "Mask")
     rectangle_contours = find_green_rectangle_contours(mask)
     top, bottom = find_green_rectangle_polygon(
         rectangle_contours,
         img,
         database_controller.get_rectangle_polygon_contour_data(),
     )
-    #Util.freeze_current_image(img, "Find Green Rectangle Polygon")
+    # Util.freeze_current_image(img, "Find Green Rectangle Polygon")
 
     return top, bottom
 
 
 def process_ball(img, database_controller: Database):
     mask = apply_ball_mask(img, database_controller.get_ball_mask_data())
-    #Util.freeze_current_image(mask, "Ball Mask")
+    # Util.freeze_current_image(mask, "Ball Mask")
     ball_contours = find_ball_contours(mask)
-    center = find_ball_polygon(ball_contours, img, database_controller.get_ball_polygon_data())
+    center = find_ball_polygon(
+        ball_contours, img, database_controller.get_ball_polygon_data()
+    )
 
     return center
-    
-mapping =  {
-    '-2': 'out of bounds',
-    '-1': 'too low', 
-    '1': 'too high',
-    '0': 'normal'
-}
+
+
+mapping = {"-2": "out of bounds", "-1": "too low", "1": "too high", "0": "normal"}
+
 
 def process_state(top, bottom, ball):
-    if ball ==-1:
-        return '-2', 'not found'
+    if ball == -1:
+        return "-2", "not found"
     if ball > bottom:
-        return '-1', 'too low'
+        return "-1", "too low"
     elif ball < top:
-        return '1', 'too high'
+        return "1", "too high"
     else:
-        return '0', 'normal'
+        return "0", "normal"
 
 
 def warp_perspective(img: np.ndarray, config_data):
@@ -109,18 +109,21 @@ def start_recording_video():
             ret,
             frame,
         ) = cap.read()
-        
-        #frame = cv2.flip(frame, 1)
+
+        frame = cv2.flip(frame, 1)
         s = frame.shape
-        frame = frame[:,s[1]//2-160:s[1]//2+160,:]
-        
+        frame = frame[:, s[1] // 2 - 160 : s[1] // 2 + 160, :]
+
         top, bottom = process_green_rectangle(copy.deepcopy(frame), database_controller)
         ball = process_ball(copy.deepcopy(frame), database_controller)
+        bnum, bmsg = process_state(top, bottom, ball)
         if with_arduino:
-            bnum, bmsg = process_state(top, bottom, ball)
+
             time.sleep(1)
-            ser.write(bytes(f'{bnum}\n', 'utf-8'))
-            print(f'{bmsg}')
+            ser.write(bytes(f"{bnum}\n", "utf-8"))
+            print(f"{bmsg}")
+        else:
+            print(f"{bnum}\n")
         cv2.imshow("camera", frame)
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
@@ -214,13 +217,7 @@ def find_ball_polygon(contours, img: np.ndarray, config_data):
     rows, cols, _ = img.shape
 
     center = None
-    (
-        area_threshold
-    ) = itemgetter(
-        "area_threshold"
-    )(
-        config_data
-    )
+    (area_threshold) = itemgetter("area_threshold")(config_data)
     if len(contours) > 0:
         # find the largest contour in the mask, then use
         # it to compute the minimum enclosing circle and
@@ -241,9 +238,9 @@ def find_ball_polygon(contours, img: np.ndarray, config_data):
         #     cv2.circle(img, (int(x), int(y)), int(radius), (0, 255, 255), 2)
         #     cv2.circle(img, center, 5, (0, 0, 255), -1)
     # cv2.line(img, (0, center[1]), (cols, center[1]), (0, 0, 0), thickness=5)
-    #cv2.imshow("Ball", img)
-    #cv2.waitKey(0)
-    
+    # cv2.imshow("Ball", img)
+    # cv2.waitKey(0)
+
     return center[1] if center else -1
 
 
