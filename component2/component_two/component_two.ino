@@ -122,7 +122,7 @@ void loop(){
           digitalWrite(led,LOW);
           digitalWrite(LED_BUILTIN, LOW);
           lcd.setCursor(0,1);
-          lcd.print("NORMAL  ");
+          lcd.print("NORMAL   ");
           noTone(9);
         }
 
@@ -156,15 +156,7 @@ void loop(){
         
         break;
     }
-  } else {
-    prevState = -2;
-    melodyState = 0;
-    digitalWrite(led,LOW);
-    digitalWrite(LED_BUILTIN, HIGH);
-    lcd.setCursor(0,1);
-    lcd.print("DATA ERROR ");
-    noTone(9);
-  }
+  } 
 
   
 }
