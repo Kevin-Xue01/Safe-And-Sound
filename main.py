@@ -13,18 +13,7 @@ mapping = {"-2": "out of bounds", "-1": "too low", "1": "too high", "0": "normal
 
 
 def main():
-    database_controller = Database()
-    util_controller = Util(database_controller=database_controller)
-    if with_video:
-        start_recording_video()
-    else:
-        img = util_controller.get_warped_color_image()
-
-        top, bottom = process_green_rectangle(copy.deepcopy(img), database_controller)
-        ball = process_ball(copy.deepcopy(img), database_controller)
-
-        print(f"{process_state(top, bottom, ball)}\n", "utf-8")
-    return
+    start_recording_video()
 
 
 def process_green_rectangle(img, database_controller: Database):
