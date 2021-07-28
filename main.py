@@ -11,6 +11,11 @@ with_video = True
 with_arduino = False
 mapping = {"-2": "out of bounds", "-1": "too low", "1": "too high", "0": "normal"}
 
+if with_arduino:
+
+    ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=1)
+    ser.flush()
+
 
 def main():
     database_controller = Database()
@@ -95,10 +100,6 @@ def warp_perspective(img: np.ndarray, config_data):
 def start_recording_video():
     cap = cv2.VideoCapture(0)
     database_controller = Database()
-    ser = None
-    if with_arduino:
-        ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=1)
-        ser.flush()
     while True:
         (
             ret,
@@ -113,6 +114,7 @@ def start_recording_video():
         ball = process_ball(copy.deepcopy(frame), database_controller)
         bnum, bmsg = process_state(top, bottom, ball)
         if with_arduino:
+
             time.sleep(1)
             ser.write(bytes(f"{bnum}\n", "utf-8"))
             print(f"{bmsg}")
