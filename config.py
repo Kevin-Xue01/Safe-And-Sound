@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import copy
-import json
 from database import Database
 from operator import itemgetter
 from util import Util

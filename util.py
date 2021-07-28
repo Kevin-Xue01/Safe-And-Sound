@@ -65,21 +65,3 @@ class Util:
         distorted = cv2.warpPerspective(img, matrix, (cols, rows))
 
         return distorted
-
-
-def start_recording_video():
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-    while True:
-        (
-            ret,
-            frame,
-        ) = cap.read()
-        # mask = apply_rectangle_mask(frame)
-        # contours = find_green_rectangle_contours(mask)
-        # find_green_rectangle_polygon(contours, frame)
-        cv2.imshow("camera", frame)
-        if cv2.waitKey(1) == ord("q"):  # press q to terminate program
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
