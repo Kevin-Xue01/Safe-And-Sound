@@ -5,15 +5,18 @@ from database import Database
 
 
 class Util:
-    def __init__(self, database_controller=Database()):
+    def __init__(
+        self, database_controller=Database(), image_location="assets/main_view.jpg"
+    ):
         self.database_controller = database_controller
+        self.image_location = image_location
 
-    def get_color_image():
-        img = cv2.imread("assets/main_view.jpg")
+    def get_color_image(self):
+        img = cv2.imread(self.image_location)
         return img
 
-    def get_grayscale_image():
-        img = cv2.imread("assets/main_view.jpg", 0)
+    def get_grayscale_image(self):
+        img = cv2.imread(self.image_location, 0)
         return img
 
     def freeze_current_image_array(images, titles):
@@ -32,7 +35,7 @@ class Util:
         cv2.destroyAllWindows()
 
     def get_warped_color_image(self):
-        img = cv2.imread("assets/main_view.jpg")
+        img = cv2.imread(self.image_location)
         return self.warp_perspective(img)
 
     def warp_perspective(self, img: np.ndarray):
