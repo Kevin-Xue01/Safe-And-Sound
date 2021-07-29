@@ -18,13 +18,6 @@ def main():
     change_rectangle_polygon_contour_params(cap)
     change_ball_mask_params(cap)
 
-    # top, bottom = process_green_rectangle(copy.deepcopy(frame), database_controller)
-    # ball = process_ball(copy.deepcopy(frame), database_controller)
-    # print(f'Gas flow rate is {process_state(top, bottom, ball)}')
-
-    # get_pixel_values(img)
-    # change_perspective_warp_params(img)
-
     return
 
 
