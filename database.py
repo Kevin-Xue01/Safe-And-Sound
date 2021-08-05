@@ -1,5 +1,4 @@
 import json
-from jsonschema import validate
 
 
 class Database:
@@ -29,16 +28,6 @@ class Database:
 
     def update_rectangle_polygon_contour_data(self, data):
 
-        schema = {
-            "type": "object",
-            "properties": {
-                "area_threshold": {"type": "number"},
-                "lower_length_threshold": {"type": "number"},
-                "upper_length_threshold": {"type": "number"},
-            },
-        }
-
-        assert validate(instance=data, schema=schema)
         with open(self.file_name, "w") as file:
             self.data["rectangle_polygon_contour"] = data
             json.dump(self.data, file, indent=4)
