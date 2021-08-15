@@ -5,20 +5,20 @@
     },
     "rectangle_mask": {
         "lower_bound": [
-            66,
-            85,
-            33
+            36,
+            36,
+            36
         ],
         "upper_bound": [
-            123,
-            133,
-            94
+            108,
+            128,
+            82
         ]
     },
     "rectangle_polygon_contour": {
         "area_threshold": 0,
-        "lower_length_threshold": 4,
-        "upper_length_threshold": 15
+        "lower_length_threshold": 0,
+        "upper_length_threshold": 136
     },
     "warp_perspective": {
         "bLC": 0,
