@@ -89,14 +89,14 @@ def start_recording_video():
         ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=1)
         ser.flush()
     while True:
-        tic = time.perf_counter()
+        # tic = time.perf_counter()
         (
             ret,
             frame,
         ) = cap.read()
 
         frame = cv2.flip(frame, 1)
-        s = frame.shape
+        s = frame.shape # (height, width, depth)
         frame = frame[:, s[1] // 2 - 160 : s[1] // 2 + 160, :]
 
         top, bottom = process_green_rectangle(copy.deepcopy(frame), database_controller)
@@ -112,8 +112,8 @@ def start_recording_video():
 
             pass
         cv2.imshow("camera", frame)
-        toc = time.perf_counter()
-        print(f"{toc - tic:0.4f},")
+        # toc = time.perf_counter()
+        # print(f"{toc - tic:0.4f},")
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
 
@@ -126,6 +126,7 @@ def apply_rectangle_mask(img, config_data):
     lower_bound_np_arr = np.array(lower_bound)
     upper_bound_np_arr = np.array(upper_bound)
     mask = cv2.inRange(img, lower_bound_np_arr, upper_bound_np_arr)
+    # noise removal
     kernel = np.ones((7, 7), np.uint8)
     mask = cv2.erode(mask, kernel)
     mask = cv2.dilate(mask, kernel)
