@@ -8,24 +8,18 @@ import time
 
 with_video = True
 with_arduino = False
-mapping = {"-2": "out of bounds", "-1": "too low", "1": "too high", "0": "normal"}
-
 
 def main():
     start_recording_video()
 
-
 def process_green_rectangle(img, database_controller: Database):
-
     mask = apply_rectangle_mask(img, database_controller.get_rectangle_mask_data())
-
     rectangle_contours = find_green_rectangle_contours(mask)
     top, bottom = find_green_rectangle_polygon(
         rectangle_contours,
         img,
         database_controller.get_rectangle_polygon_contour_data(),
     )
-
     return top, bottom
 
 
@@ -35,7 +29,6 @@ def process_ball(img, database_controller: Database):
     center = find_ball_polygon(
         ball_contours, img, database_controller.get_ball_polygon_data()
     )
-
     return center
 
 
@@ -49,49 +42,16 @@ def process_state(top, bottom, ball):
     else:
         return "0", "normal"
 
-
-def warp_perspective(img: np.ndarray, config_data):
-    rows, cols, _ = img.shape
-    for i in config_data:
-        config_data[i] = int(config_data[i])
-    (bLC, bLR, bRC, bRR, tLC, tLR, tRC, tRR,) = itemgetter(
-        "bLC",
-        "bLR",
-        "bRC",
-        "bRR",
-        "tLC",
-        "tLR",
-        "tRC",
-        "tRR",
-    )(config_data)
-
-    pts1 = np.float32(
-        [
-            [int(cols * (tLC / 100)), int(rows * (tLR / 100))],
-            [int(cols * (tRC / 100)), int(rows * (tRR / 100))],
-            [int(cols * (bLC / 100)), int(rows * (bLR / 100))],
-            [int(cols * (bRC / 100)), int(rows * (bRR / 100))],
-        ]
-    )
-    pts2 = np.float32([[cols * 0.1, rows], [cols, rows], [0, 0], [cols, 0]])
-    matrix = cv2.getPerspectiveTransform(pts1, pts2)
-    distorted = cv2.warpPerspective(img, matrix, (cols, rows))
-
-    return distorted
-
-
 def start_recording_video():
     cap = cv2.VideoCapture(0)
     database_controller = Database()
     ser = None
     if with_arduino:
-
         ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=1)
         ser.flush()
     while True:
-        # tic = time.perf_counter()
         (
-            ret,
+            _,
             frame,
         ) = cap.read()
 
@@ -101,19 +61,13 @@ def start_recording_video():
 
         top, bottom = process_green_rectangle(copy.deepcopy(frame), database_controller)
         ball = process_ball(copy.deepcopy(frame), database_controller)
-        bnum, bmsg = process_state(top, bottom, ball)
+        output_numeric_value, output_string_value = process_state(top, bottom, ball)
         if with_arduino:
-
             time.sleep(1)
-            ser.write(bytes(f"{bnum}\n", "utf-8"))
-            print(f"{bmsg}")
-        else:
-            # print(f"{bnum}\n")
-
-            pass
+            ser.write(bytes(f"{output_numeric_value}\n", "utf-8"))
+            print(f"{output_string_value}")
+    
         cv2.imshow("camera", frame)
-        # toc = time.perf_counter()
-        # print(f"{toc - tic:0.4f},")
         if cv2.waitKey(1) == ord("q"):  # press q to terminate program
             break
 
