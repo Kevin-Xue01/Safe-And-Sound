@@ -3,7 +3,6 @@ import numpy as np
 from database import Database
 from operator import itemgetter
 import copy
-from util import Util
 import serial
 import time
 
