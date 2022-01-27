@@ -1,16 +1,11 @@
 import cv2
 import numpy as np
-from database import Database
-from operator import itemgetter
 import copy
 import serial
 import time
+from operator import itemgetter
+from database import Database
 
-with_video = True
-with_arduino = False
-
-def main():
-    start_recording_video()
 
 def process_green_rectangle(img, database_controller: Database):
     mask = apply_rectangle_mask(img, database_controller.get_rectangle_mask_data())
@@ -41,38 +36,6 @@ def process_state(top, bottom, ball):
         return "1", "too high"
     else:
         return "0", "normal"
-
-def start_recording_video():
-    cap = cv2.VideoCapture(0)
-    database_controller = Database()
-    ser = None
-    if with_arduino:
-        ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=1)
-        ser.flush()
-    while True:
-        (
-            _,
-            frame,
-        ) = cap.read()
-
-        frame = cv2.flip(frame, 1)
-        s = frame.shape # (height, width, depth)
-        frame = frame[:, s[1] // 2 - 160 : s[1] // 2 + 160, :]
-
-        top, bottom = process_green_rectangle(copy.deepcopy(frame), database_controller)
-        ball = process_ball(copy.deepcopy(frame), database_controller)
-        output_numeric_value, output_string_value = process_state(top, bottom, ball)
-        if with_arduino:
-            time.sleep(1)
-            ser.write(bytes(f"{output_numeric_value}\n", "utf-8"))
-            print(f"{output_string_value}")
-    
-        cv2.imshow("camera", frame)
-        if cv2.waitKey(1) == ord("q"):  # press q to terminate program
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
 
 
 def apply_rectangle_mask(img, config_data):
@@ -174,6 +137,40 @@ def find_ball_polygon(contours, img: np.ndarray, config_data):
 
     return center[1] if center else -1
 
+def start_recording_video():
+    with_arduino = True
+
+    cap = cv2.VideoCapture(0)
+    database_controller = Database()
+    ser = None
+    if with_arduino:
+        ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=1)
+        ser.flush()
+    while True:
+        (
+            _,
+            frame,
+        ) = cap.read()
+
+        frame = cv2.flip(frame, 1)
+        s = frame.shape # (height, width, depth)
+        frame = frame[:, s[1] // 2 - 160 : s[1] // 2 + 160, :]
+
+        top, bottom = process_green_rectangle(frame.copy(), database_controller)
+        ball = process_ball(frame.copy(), database_controller)
+        output_numeric_value, output_string_value = process_state(top, bottom, ball)
+        if with_arduino:
+            time.sleep(1)
+            ser.write(bytes(f"{output_numeric_value}\n", "utf-8"))
+            print(f"{output_string_value}")
+    
+        cv2.imshow("camera", frame)
+        if cv2.waitKey(1) == ord("q"):  # press q to terminate program
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
-    main()
+    start_recording_video()
