@@ -326,6 +326,7 @@ def change_ball_mask_params(cap):
 
 def find_ball_contours(mask):
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    _ = 1
     return contours
 
 
