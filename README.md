@@ -1,12 +1,12 @@
 Creating a virtual environment(name of virtual environment, 3rd argument, is "venv"):
 1. (Into cmd): python -m venv venv
-2. (Into cmd): venv\Scripts\activate.bat
+2. (Into cmd): venv\Scripts\activate.bat | (Into Bash): cd venv/ , cd Scripts/, . activate
 
 Creating a virtual environment with system packages(packages already on machine)(name of virtual environment, 3rd argument, is "venv"):
 1. (Into cmd): python -m venv venv --system-site-packages
-2. (Into cmd): venv\Scripts\activate.bat
+2. (Into cmd): venv\Scripts\activate.bat | (Into Bash): cd venv/ , cd Scripts/, . activate
 
-Exit venv:
+Exit venv(cmd or bash):
 1. deactivate
 
 See packages(including system packages):
